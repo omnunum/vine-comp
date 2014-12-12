@@ -58,7 +58,7 @@ def download_vines(data):
         filename = append_path('cache/' + name + '.mp4')
         # Download the file if it does not exist
         if not osp.isfile(filename):
-            print 'downloading ' + perma + ': ' + desc
+            print'downloading ' + perma + ': ' + desc
             urllib.urlretrieve(url, filename)
 
 

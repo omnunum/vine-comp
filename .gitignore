@@ -1,2 +1,3 @@
 cache/
 records.csv
+*.pyc
