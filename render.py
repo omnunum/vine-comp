@@ -49,16 +49,15 @@ def render_vines(data):
             #encodes text as ascii for textclip creation
             user = encode_index(data['username'], i)
             desc = encode_index(data['description'], i)
-            user = 'Vine By:' + user
+            user = 'Vine By:\n' + user
             #lambda to create text clip
-            tc = lambda text, size: (mpe.TextClip(txt=text, size=(187, 480),
+            tc = lambda text, size, xline: (mpe.TextClip(txt=text, size=(180, 480),
                                             method='caption', align='center',
                                             font='arial', fontsize=size,
-                                            color='white', interline=20)
+                                            color='white', interline=xline)
                                     .set_duration(vine.duration))
-            user_osd = tc(user, 40)
-            desc_osd = tc(desc, 28).set_pos('right')
-                        
+            user_osd = tc(user, 40, 20)
+            desc_osd = tc(desc, 28, 13).set_pos('right')
             #composite the text on the sides of the video
             comp = mpe.CompositeVideoClip([vine, user_osd, desc_osd])
             #start the render
@@ -86,5 +85,5 @@ def concat_vines(data):
 
 if __name__ == '__main__':
     data = pd.read_csv(ap('records.csv'), encoding='utf-8')
-    #render_vines(data)
+    render_vines(data)
     concat_vines(data)
