@@ -20,6 +20,7 @@ def vfc_from_file(filename, directory):
 
 
 def render_vines(data):
+    encode_index = lambda data, index: (data.astype(basestring)[index].encode('ascii', 'ignore'))
     #verify files exist in cache folder
     datav = exists(data, 'cache')
     datavrid = exists(data, 'render')['id'].astype(basestring)
@@ -29,8 +30,8 @@ def render_vines(data):
                                                            color=(20, 20, 25),
                                                            pos='center')
             #encodes text as ascii for textclip creation
-            user = data['username'].astype(basestring)[i].encode('ascii', 'ignore')
-            desc = data['description'].astype(basestring)[i].encode('ascii', 'ignore')
+            user = encode_index(data['username'], i)
+            desc = encode_index(data['description'], i)
             user = 'Vine By:' + user
             user_osd = (mpe.TextClip(txt=user, size=(187, 480),
                                      method='caption', align='center',
@@ -63,9 +64,14 @@ def concat_vines(data):
     for i, group in enumerate(groups):
         videos = [vfc_from_file(vineid, 'render') for vineid in group]
         concat = mpe.concatenate_videoclips(videos)
-        concat.write_videofile(group_render_path('group_' + str(i)))
+        concat.write_videofile(group_render_path('group_' + str(i)),
+                               codec='libx264', threads=2,
+                               verbose=True, fps=30)
     videos = [vfcg(groupid) for groupid in range(len(groups))]
-    concat = mpe.concatenate_videoclips(group_render_path('FINAL RENDER'))
+    concat = mpe.concatenate_videoclips(videos)
+    concat.write_videofile(group_render_path("FINAL RENDER"),
+                           codec='libx264', threads=2,
+                           verbose=True, fps=30)
 
 
 if __name__ == '__main__':
