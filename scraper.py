@@ -107,11 +107,11 @@ def update_records(data):
         records = pd.read_csv(filename, encoding='utf-8')
         comp = sort_clean(pd.concat([data, records], ignore_index=True))
         comp.to_csv(filename, index=False, encoding='utf-8')
-    #9f file doesn't exist, save it for the first time
+    #f file doesn't exist, save it for the first time
     else:
         data.to_csv(filename, index=False, encoding='utf-8')
 
 if __name__ == "__main__":
-    data = get_top_pages(2)
+    data = get_top_pages(1)
     download_vines(data)
     update_records(data)

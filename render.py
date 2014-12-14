@@ -16,11 +16,19 @@ def group_data(data, group_size):
 
 
 def vfc_from_file(filename, directory):
-    return mpe.VideoFileClip(ap(str(directory) + '/' + str(filename) + '.mp4'))
-
+    path = ap(str(directory) + '/' + str(filename) + '.mp4')
+    try:
+        video = mpe.VideoFileClip(path)
+        return video
+    except Exception as e:
+        print(e)
 
 def write_x264(vfc, path):
-    vfc.write_videofile(path, codec='libx264', threads=2, verbose=True, fps=30)
+    try:
+        vfc.write_videofile(path, codec='libx264', 
+                            threads=2, verbose=True, fps=30)
+    except Exception as e:
+        print(e)
 
 
 def render_vines(data):
@@ -29,7 +37,8 @@ def render_vines(data):
                                             .encode('ascii', 'ignore'))
     #verify files exist in cache folder
     datav = exists(data, 'cache')
-    datavrid = exists(data, 'render')['id'].astype(basestring)
+    #files already rendered get skipped
+    datavrid = list(exists(data, 'render')['id'].astype(basestring))
     for i, vineid in enumerate(datav['id'].astype(basestring)):
         if vineid not in datavrid:
             vine = vfc_from_file(vineid, 'cache').on_color(size=(854, 480),
@@ -59,7 +68,7 @@ def render_vines(data):
 def concat_vines(data):
     datavid = exists(data, 'render')['id']
     groups = group_data(datavid, 10)
-    #lambda to get video from group number
+    #lambda to get VideoFileClip from group number
     vfcg = lambda group: vfc_from_file('group_' + str(group), 'render/groups')
     group_render_path = lambda f: ap('render/groups/' + f + '.mp4')
     for i, group in enumerate(groups):
