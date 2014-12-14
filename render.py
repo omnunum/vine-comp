@@ -8,6 +8,7 @@ Created on Thu Dec 11 14:36:33 2014
 import pandas as pd
 from scraper import append_path
 from moviepy import editor as mpe
+import re
 
 
 def render_vines(data):
@@ -17,16 +18,15 @@ def render_vines(data):
         vine = mpe.VideoFileClip(vine_path)
         vine = vine.on_color(size=(854, 480), color=(20, 20, 25), pos='center')
         vine = vine.set_position('center').set_duration(vine.duration)
-        print vine.duration
-        user = str(data['username'][i])
-        desc = str(data['description'][i])
+        user = data['username'].astype(basestring)[i].encode('ascii', 'ignore')
+        desc = data['description'].astype(basestring)[i].encode('ascii', 'ignore')
         user_osd = mpe.TextClip(txt=user, size=(227, 480),
                                 method='caption', align='East')
         desc_osd = mpe.TextClip(txt=desc, size=(227, 480),
                                 method='caption', align='West')
         comp = mpe.CompositeVideoClip([background, user_osd, desc_osd, vine])
         render_path = append_path('render/' + vineid + '.mp4')
-        comp.write_videofile(render_path, fps=30, 
+        comp.write_videofile(render_path, fps=30,
                              codec='libx264', threads=2,
                              verbose=True)
 
