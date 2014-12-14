@@ -7,19 +7,29 @@ Created on Thu Dec 11 14:36:33 2014
 
 import pandas as pd
 from scraper import append_path
-from moviepy.editor import *
+from moviepy import editor as mpe
 
 
-def stitch_files(data):
-    dstrings = data['id'].astype(basestring)
-    files = [append_path('cache/' + x + '.mp4') for x in dstrings]
-    batches = [files[x:x+10] for x in xrange(0, len(files), 10)]
-    for i, batch in enumerate(batches):
-        videos = [VideoFileClip(file) for file in batch]
-        comp = concatenate_videoclips(videos)
-        comp.write_videofile('composite_%d.mkv' % i, fps=30, codec='libx264')
-    print files
+def render_vines(data):
+    background = mpe.ColorClip((854, 480), col=(20, 20, 25))
+    for i, vineid in enumerate(data['id'].astype(basestring)):
+        vine_path = append_path('cache/' + vineid + '.mp4')
+        vine = mpe.VideoFileClip(vine_path)
+        vine = vine.on_color(size=(854, 480), color=(20, 20, 25), pos='center')
+        vine = vine.set_position('center').set_duration(vine.duration)
+        print vine.duration
+        user = str(data['username'][i])
+        desc = str(data['description'][i])
+        user_osd = mpe.TextClip(txt=user, size=(227, 480),
+                                method='caption', align='East')
+        desc_osd = mpe.TextClip(txt=desc, size=(227, 480),
+                                method='caption', align='West')
+        comp = mpe.CompositeVideoClip([background, user_osd, desc_osd, vine])
+        render_path = append_path('render/' + vineid + '.mp4')
+        comp.write_videofile(render_path, fps=30, 
+                             codec='libx264', threads=2,
+                             verbose=True)
 
 if __name__ == '__main__':
     data = pd.read_csv(append_path('records.csv'), encoding='utf-8')
-    stitch_files(data)
+    render_vines(data)

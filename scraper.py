@@ -9,6 +9,7 @@ import pandas as pd
 import json
 import urllib
 import os.path as osp
+import sys
 
 
 #sorts the rows by the loop count, drop duplicates, and resets the index
@@ -21,29 +22,34 @@ def sort_clean(data):
 
 #gets the absolute path of the directory and append the path to it
 def append_path(path):
-    return osp.join(osp.dirname(osp.abspath(__file__)), path)
+    return osp.join(osp.dirname(osp.abspath(sys.argv[0])), path)
 
 
 def get_top_pages(pages):
+    #composite dataframe to hold all the compiled information
     comp = pd.DataFrame()
+    #api page index starts at 1
     for page in xrange(1, pages + 1):
         url = 'https://api.vineapp.com/timelines/popular?page=%d' % page
         response = urllib.urlopen(url)
+        #response object contains a json object returned from the vine api
         vines = json.loads(response.read())
-        #the meat of the response we're looking for, vine entries
+        #the meat of the json object we're looking for, vine entries
         df = pd.DataFrame.from_dict(vines['data']['records'])
+        #if this is the first page, start comp as a copy of the page
         if page == 1:
             comp = df.copy()
+        #else add current page to the comp
         else:
             comp = pd.concat([df, comp], ignore_index=True)
-    #expands the loops object into count and velocity columns
+    #expands the loops column's objects into count and velocity columns
     loops = comp['loops'].apply(lambda x: pd.Series(x))
     unstacked = loops.unstack().unstack().T[['count', 'velocity']]
     #adds the new columns to the previous page composite
     comp[['count', 'velocity']] = unstacked
-    #takes just the columns we need
+    #takes the columns we need
     subset = comp[['count', 'velocity', 'videoUrl',
-                   'permalinkUrl', 'description']].copy()
+                   'permalinkUrl', 'description', 'username']].copy()
     get_id = lambda x: x.rsplit('/', 1)[-1]
     subset['id'] = [get_id(perma) for perma in subset['permalinkUrl']]
     sort = sort_clean(subset)
@@ -58,7 +64,7 @@ def download_vines(data):
         filename = append_path('cache/' + name + '.mp4')
         # Download the file if it does not exist
         if not osp.isfile(filename):
-            print'downloading ' + perma + ': ' + desc
+            print 'downloading ' + perma + ': ' + desc
             urllib.urlretrieve(url, filename)
 
 
