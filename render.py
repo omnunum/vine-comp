@@ -32,7 +32,7 @@ def vfc_from_file(filename, directory):
 
 def render_vines(data):
     datav = vine_exists(data, 'cache')
-    for i, vineid in enumerate(datav.astype(basestring)):
+    for i, vineid in enumerate(datav['id'].astype(basestring)):
         vine = vfc_from_file(vineid, 'cache').on_color(size=(854, 480),
                                                        color=(20, 20, 25),
                                                        pos='center')
