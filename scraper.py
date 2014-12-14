@@ -63,7 +63,10 @@ def download_vines(data):
         # Download the file if it does not exist
         if not osp.isfile(filename):
             print('downloading ' + perma + ': ' + desc)
-            urllib.urlretrieve(url, filename)
+            r = rq.get(url, stream=True)
+            with open(filename, 'wb') as fd:
+                for chunk in r.iter_content(5000):
+                    fd.write(chunk)
 
 
 def update_records(data):
