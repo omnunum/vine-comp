@@ -9,6 +9,8 @@ import pandas as pd
 from scraper import abs_path as ap
 from scraper import vine_exists as exists
 from moviepy import editor as mpe
+import os
+from os import path as osp
 
 
 def group_data(data, group_size):
@@ -68,6 +70,8 @@ def render_vines(data):
 def concat_vines(data):
     datavid = exists(data, 'render')['id']
     groups = group_data(datavid, 10)
+    if not osp.isdir(ap('render/groups')):
+        os.makedirs('render/groups')
     #lambda to get VideoFileClip from group number
     vfcg = lambda group: vfc_from_file('group_' + str(group), 'render/groups')
     group_render_path = lambda f: ap('render/groups/' + f + '.mp4')
@@ -82,5 +86,5 @@ def concat_vines(data):
 
 if __name__ == '__main__':
     data = pd.read_csv(ap('records.csv'), encoding='utf-8')
-    render_vines(data)
+    #render_vines(data)
     concat_vines(data)
