@@ -1,3 +1,6 @@
 cache/*
+render/*
 records.csv
-*.pyc
+*.py[cod]
+~lock*#
+*~
