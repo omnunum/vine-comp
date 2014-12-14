@@ -58,11 +58,14 @@ def flush_all():
 def get_top_pages(pages):
     #composite dataframe to hold all the compiled information
     comp = pd.DataFrame()
-    #api page index starts at 1
-    for page in range(1, pages + 1):
+    for page in range(pages + 1):
         url = 'https://api.vineapp.com/timelines/popular?page=%d' % page
         #vine object is the json object returned from the vine api
-        vines = rq.get(url).json()
+        try:
+            vines = rq.get(url).json()
+        except Exception as e:
+            print(e)
+            return None
         #the meat of the json object we're looking for, vine entries
         df = pd.DataFrame.from_dict(vines['data']['records'])
         #if this is the first page, start comp as a copy of the page
@@ -112,9 +115,14 @@ def update_records(data):
         data.to_csv(filename, index=False, encoding='utf-8')
 
 if __name__ == "__main__":
-    if len(sys.argv) == 1:
-        data = get_top_pages(1)
-        download_vines(data)
-        update_records(data)
-    elif '-flush' in sys.argv:
-        flush_all()
+    data = get_top_pages(5)
+    if data:
+        if len(sys.argv) > 1:
+            if '-flush' in sys.argv:
+                flush_all()
+            if '-update' in sys.argv:
+                update_records(data)
+            if '-download' in sys.argv:
+                download_vines(data)
+        else:
+            update_records(data)
