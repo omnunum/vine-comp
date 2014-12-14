@@ -24,6 +24,18 @@ def append_path(path):
     return osp.join(osp.dirname(osp.abspath(sys.argv[0])), path)
 
 
+#checks all the id's of the vines to see if there is a corresponding file
+#in the specified directory, if wrong directory method returns empty DataFrame
+def vine_exists(data, directory):
+    if directory in ['cache', 'render']:
+        #filter lambda for the dataframe
+        is_file = lambda vineid: osp.isfile(append_path(directory + '/' + str(vineid) + '.mp4'))
+        datav = data[data['id'].map(is_file)]
+        return datav
+    else:
+        return pd.DataFrame()
+
+
 def get_top_pages(pages):
     #composite dataframe to hold all the compiled information
     comp = pd.DataFrame()
