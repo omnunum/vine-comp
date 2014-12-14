@@ -6,8 +6,6 @@ Created on Wed Dec 10 22:18:28 2014
 """
 
 import pandas as pd
-import json
-import urllib
 import os.path as osp
 import sys
 import requests as rq
