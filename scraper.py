@@ -10,6 +10,7 @@ import os
 import os.path as osp
 import sys
 import requests as rq
+import re
 
 
 #sorts the rows by the loop count, drop duplicates, and resets the index
@@ -47,33 +48,37 @@ def delete_file(path):
 
 
 #gets rid of all files in the render and cache directories as well as
-#the vine records csv
+#the vine records csv and leftover temp mp3 audio clips
 def flush_all():
     for directory in ['render/', 'cache/']:
         for vfile in os.listdir(abs_path(directory)):
             delete_file(directory + vfile)
+    for vfile in os.listdir(abs_path('')):
+        print(vfile)
+        if vfile.endswith('.mp3'):
+            print('removing: ' + vfile)
+            delete_file(vfile)
     delete_file('records.csv')
 
 
 def get_top_pages(pages):
     #composite dataframe to hold all the compiled information
     comp = pd.DataFrame()
-    for page in range(pages + 1):
+    for page in range(0, pages + 1):
         url = 'https://api.vineapp.com/timelines/popular?page=%d' % page
         #vine object is the json object returned from the vine api
         try:
             vines = rq.get(url).json()
+            #the meat of the json object we're looking for, vine entries
+            df = pd.DataFrame.from_dict(vines['data']['records'])
+            #if this is the first page, start comp as a copy of the page
+            if page == 1:
+                comp = df.copy()
+            #else add current page to the comp
+            else:
+                comp = pd.concat([df, comp], ignore_index=True)
         except Exception as e:
             print(e)
-            return None
-        #the meat of the json object we're looking for, vine entries
-        df = pd.DataFrame.from_dict(vines['data']['records'])
-        #if this is the first page, start comp as a copy of the page
-        if page == 1:
-            comp = df.copy()
-        #else add current page to the comp
-        else:
-            comp = pd.concat([df, comp], ignore_index=True)
     #expands the loops column's objects into count and velocity columns
     loops = comp['loops'].apply(lambda x: pd.Series(x))
     unstacked = loops.unstack().unstack().T[['count', 'velocity']]
@@ -115,8 +120,8 @@ def update_records(data):
         data.to_csv(filename, index=False, encoding='utf-8')
 
 if __name__ == "__main__":
-    data = get_top_pages(5)
-    if data:
+    data = get_top_pages(4)
+    if not data.empty:
         if len(sys.argv) > 1:
             if '-flush' in sys.argv:
                 flush_all()
