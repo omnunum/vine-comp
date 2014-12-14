@@ -10,6 +10,7 @@ import json
 import urllib
 import os.path as osp
 import sys
+import requests as rq
 
 
 #sorts the rows by the loop count, drop duplicates, and resets the index
@@ -29,11 +30,10 @@ def get_top_pages(pages):
     #composite dataframe to hold all the compiled information
     comp = pd.DataFrame()
     #api page index starts at 1
-    for page in xrange(1, pages + 1):
+    for page in range(1, pages + 1):
         url = 'https://api.vineapp.com/timelines/popular?page=%d' % page
-        response = urllib.urlopen(url)
-        #response object contains a json object returned from the vine api
-        vines = json.loads(response.read())
+        #vine object is the json object returned from the vine api
+        vines = rq.get(url).json()
         #the meat of the json object we're looking for, vine entries
         df = pd.DataFrame.from_dict(vines['data']['records'])
         #if this is the first page, start comp as a copy of the page
@@ -64,7 +64,7 @@ def download_vines(data):
         filename = append_path('cache/' + name + '.mp4')
         # Download the file if it does not exist
         if not osp.isfile(filename):
-            print 'downloading ' + perma + ': ' + desc
+            print('downloading ' + perma + ': ' + desc)
             urllib.urlretrieve(url, filename)
 
 
