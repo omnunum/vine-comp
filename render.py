@@ -26,14 +26,14 @@ def group_data(data, group_size):
     return [data[x:x+group_size] for x in range(0, len(data), group_size)]
 
 
-def vfc_from_file(indentifier, directory):
-    return mpe.VideoFileClip(append_path(str(directory) + '/' + str(identifier) + '.mp4'))
+def vfc_from_file(filename, directory):
+    return mpe.VideoFileClip(append_path(str(directory) + '/' + str(filename) + '.mp4'))
 
 
 def render_vines(data):
     datav = vine_exists(data, 'cache')
     for i, vineid in enumerate(datav.astype(basestring)):
-        vine = vfc_from_vine(vineid, 'cache').on_color(size=(854, 480),
+        vine = vfc_from_file(vineid, 'cache').on_color(size=(854, 480),
                                                        color=(20, 20, 25),
                                                        pos='center')
         #encodes text as ascii for textclip creation
