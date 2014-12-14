@@ -8,23 +8,31 @@ Created on Thu Dec 11 14:36:33 2014
 import pandas as pd
 from scraper import append_path
 from moviepy import editor as mpe
-import re
 
 
 def render_vines(data):
-    background = mpe.ColorClip((854, 480), col=(20, 20, 25))
     for i, vineid in enumerate(data['id'].astype(basestring)):
+        #gets absolute path of video
         vine_path = append_path('cache/' + vineid + '.mp4')
+        #creates vine VFC and formats it
         vine = mpe.VideoFileClip(vine_path)
-        vine = vine.on_color(size=(854, 480), color=(20, 20, 25), pos='center')
-        vine = vine.set_position('center').set_duration(vine.duration)
+        vine = vine.on_color(size=(854, 480), color=(20, 20, 25),
+                             pos='center')
+        #encodes text as ascii for textclip creation
         user = data['username'].astype(basestring)[i].encode('ascii', 'ignore')
         desc = data['description'].astype(basestring)[i].encode('ascii', 'ignore')
-        user_osd = mpe.TextClip(txt=user, size=(227, 480),
-                                method='caption', align='East')
-        desc_osd = mpe.TextClip(txt=desc, size=(227, 480),
-                                method='caption', align='West')
-        comp = mpe.CompositeVideoClip([background, user_osd, desc_osd, vine])
+        user_osd = (mpe.TextClip(txt=user, size=(187, 480),
+                                 method='caption', align='center',
+                                 font='arial', fontsize=30,
+                                 color='white')
+                    .set_duration(vine.duration))
+        desc_osd = (mpe.TextClip(txt=desc, size=(187, 480),
+                                 method='caption', align='center',
+                                 font='arial', fontsize=24,
+                                 color='white')
+                    .set_duration(vine.duration))
+        #composite the text on the sides of the video
+        comp = mpe.CompositeVideoClip([vine, user_osd, desc_osd.set_pos('right')])
         render_path = append_path('render/' + vineid + '.mp4')
         comp.write_videofile(render_path, fps=30,
                              codec='libx264', threads=2,

@@ -13,10 +13,10 @@ import requests as rq
 
 #sorts the rows by the loop count, drop duplicates, and resets the index
 def sort_clean(data):
-    sorted = data.sort(columns=['count'], ascending=False)
-    cleaned = sorted.drop_duplicates(subset='permalinkUrl')
-    reset = cleaned.reset_index(drop=True)
-    return reset
+    data_sorted = data.sort(columns=['count'], ascending=False)
+    data_cleaned = data_sorted.drop_duplicates(subset='permalinkUrl')
+    data_reindex = data_cleaned.reset_index(drop=True)
+    return data_reindex
 
 
 #gets the absolute path of the directory and append the path to it
@@ -63,9 +63,8 @@ def download_vines(data):
         # Download the file if it does not exist
         if not osp.isfile(filename):
             print('downloading ' + perma + ': ' + desc)
-            r = rq.get(url, stream=True)
             with open(filename, 'wb') as fd:
-                for chunk in r.iter_content(5000):
+                for chunk in rq.get(url, stream=True).iter_content(5000):
                     fd.write(chunk)
 
 
