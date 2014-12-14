@@ -4,3 +4,4 @@ records.csv
 *.py[cod]
 ~lock*#
 *~
+*.mp3

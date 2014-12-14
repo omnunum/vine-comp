@@ -6,6 +6,7 @@ Created on Wed Dec 10 22:18:28 2014
 """
 
 import pandas as pd
+import os
 import os.path as osp
 import sys
 import requests as rq
@@ -20,7 +21,7 @@ def sort_clean(data):
 
 
 #gets the absolute path of the directory and append the path to it
-def append_path(path):
+def abs_path(path):
     return osp.join(osp.dirname(osp.abspath(sys.argv[0])), path)
 
 
@@ -29,11 +30,29 @@ def append_path(path):
 def vine_exists(data, directory):
     if directory in ['cache', 'render']:
         #filter lambda for the dataframe
-        is_file = lambda vineid: osp.isfile(append_path(directory + '/' + str(vineid) + '.mp4'))
+        is_file = lambda vineid: osp.isfile(abs_path(directory + '/' + str(vineid) + '.mp4'))
         datav = data[data['id'].map(is_file)]
         return datav
     else:
         return pd.DataFrame()
+
+
+def delete_file(path):
+    path = abs_path(path)
+    try:
+        if osp.isfile(path):
+            os.unlink(path)
+    except Exception, e:
+        print e
+
+
+#gets rid of all files in the render and cache directories as well as
+#the vine records csv
+def flush_all():
+    for directory in ['render/', 'cache/']:
+        for vfile in os.listdir(abs_path(directory)):
+            delete_file(directory + vfile)
+    delete_file('records.csv')
 
 
 def get_top_pages(pages):
@@ -71,7 +90,7 @@ def download_vines(data):
     zipped = zip(data['videoUrl'], data['id'], data['description'])
     for url, perma, desc in zipped:
         name = perma
-        filename = append_path('cache/' + name + '.mp4')
+        filename = abs_path('cache/' + name + '.mp4')
         # Download the file if it does not exist
         if not osp.isfile(filename):
             print('downloading ' + perma + ': ' + desc)
@@ -82,7 +101,7 @@ def download_vines(data):
 
 def update_records(data):
     #gets real path of file
-    filename = append_path('records.csv')
+    filename = abs_path('records.csv')
     #if the file exsts, combine file with new data
     if osp.isfile(filename):
         records = pd.read_csv(filename, encoding='utf-8')
