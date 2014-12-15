@@ -10,7 +10,7 @@ import os
 import os.path as osp
 import sys
 import requests as rq
-import re
+import subprocess
 
 
 #sorts the rows by the loop count, drop duplicates, and resets the index
@@ -118,6 +118,17 @@ def update_records(data):
     else:
         data.to_csv(filename, index=False, encoding='utf-8')
 
+
+def upload_video(path):
+    if osp.isfile(path):
+        args = (['python2', 'youtube-upload.py',
+                '--email="baronvonbadguy@gmail.com"', '--password="XXXXX"',
+                '--title="Hottest Vines of The Week 0000"', path])
+        subprocess.call(args)
+    else:
+        print('File not found: ' + path)
+
+
 if __name__ == "__main__":
     data = get_top_pages(4)
     if not data.empty:
@@ -128,5 +139,7 @@ if __name__ == "__main__":
                 update_records(data)
             if '-download' in sys.argv:
                 download_vines(data)
+            if '-upload' in sys.argv:
+                upload_video(abs_path('render/groups/FINAL RENDER.mp4'))
         else:
             update_records(data)
