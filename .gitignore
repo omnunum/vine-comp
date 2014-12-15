@@ -1,5 +1,6 @@
-cache/*
-render/*
+cache/meta/*
+cache/videos/*
+render/groups/*
 records.csv
 *.py[cod]
 ~lock*#
