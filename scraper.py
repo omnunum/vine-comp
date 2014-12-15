@@ -60,7 +60,7 @@ def download_vines(data):
     zipped = zip(data['videoUrl'], data['id'], data['description'])
     for url, perma, desc in zipped[:100]:
         name = perma
-        filename = abs_path('cache/' + name + '.mp4')
+        filename = ap('cache/' + name + '.mp4')
         # Download the file if it does not exist
         if not osp.isfile(filename):
             print('downloading ' + perma + ': ' + desc)
@@ -71,7 +71,7 @@ def download_vines(data):
 
 def update_records(data):
     #gets real path of file
-    filename = abs_path('records.csv')
+    filename = ap('records.csv')
     #if the file exsts, combine file with new data
     if osp.isfile(filename):
         records = pd.read_csv(filename, encoding='utf-8')
@@ -84,7 +84,7 @@ def update_records(data):
 
 def upload_video(path):
     if osp.isfile(path):
-        args = (['python2', abs_path('youtube_upload.py'),
+        args = (['python2', ap('youtube_upload.py'),
                 '--email=vinecompauthority@gmail.com',
                 '--password=4u7H0r17Y',
                 '--title=Hottest Vines of The Week 12-14-14',
@@ -92,7 +92,7 @@ def upload_video(path):
                 path])
         subprocess.call(args)
     else:
-        print('File not found: ' + path)        
+        print('File not found: ' + path)
 
 
 if __name__ == "__main__":
@@ -106,6 +106,6 @@ if __name__ == "__main__":
             if '--download' in sys.argv:
                 download_vines(data)
             if '--upload' in sys.argv:
-                upload_video(abs_path('render/groups/FINAL RENDER.mp4'))
+                upload_video(ap('render/groups/FINAL RENDER.mp4'))
         else:
             update_records(data)

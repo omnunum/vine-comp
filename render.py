@@ -7,8 +7,6 @@ Created on Thu Dec 11 14:36:33 2014
 
 import pandas as pd
 from shared import *
-from shared import abs_path as ap
-from shared import vine_exists as exists
 from moviepy import editor as mpe
 import os
 from os import path as osp

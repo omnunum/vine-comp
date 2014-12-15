@@ -19,16 +19,16 @@ def sort_clean(data):
 
 
 #gets the absolute path of the directory and append the path to it
-def abs_path(path):
+def ap(path):
     return osp.join(osp.dirname(osp.abspath(sys.argv[0])), path)
 
 
 #checks all the id's of the vines to see if there is a corresponding file
 #in the specified directory, if wrong directory method returns empty DataFrame
-def vine_exists(data, directory):
+def exists(data, directory):
     if directory in ['cache', 'render']:
         #filter lambda for the dataframe
-        is_file = lambda vineid: osp.isfile(abs_path(directory + '/' + str(vineid) + '.mp4'))
+        is_file = lambda vineid: osp.isfile(ap(directory + '/' + str(vineid) + '.mp4'))
         datav = data[data['id'].map(is_file)]
         return datav
     else:
@@ -36,7 +36,7 @@ def vine_exists(data, directory):
 
 
 def delete_file(path):
-    path = abs_path(path)
+    path = ap(path)
     try:
         if osp.isfile(path):
             os.unlink(path)
@@ -47,10 +47,11 @@ def delete_file(path):
 #gets rid of all files in the render and cache directories as well as
 #the vine records csv and leftover temp mp3 audio clips
 def flush_all():
-    for directory in ['render/', 'render/groups/', 'cache/']:
-        for vfile in os.listdir(abs_path(directory)):
+    for directory in ['render/', 'render/groups/',
+                      'cache/meta/', 'cache/videos/']:
+        for vfile in os.listdir(ap(directory)):
             delete_file(directory + vfile)
-    for vfile in os.listdir(abs_path('')):
+    for vfile in os.listdir(ap('')):
         if vfile.endswith('.mp3'):
             print('removing: ' + vfile)
             delete_file(vfile)
