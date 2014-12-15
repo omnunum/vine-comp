@@ -121,9 +121,12 @@ def update_records(data):
 
 def upload_video(path):
     if osp.isfile(path):
-        args = (['python2', 'youtube-upload.py',
-                '--email="baronvonbadguy@gmail.com"', '--password="XXXXX"',
-                '--title="Hottest Vines of The Week 0000"', path])
+        args = (['python2', abs_path('youtube_upload.py'),
+                '--email=vinecompauthority@gmail.com', 
+                '--password=XXXXX',
+                '--title="Hottest Vines of The Week 0000"', 
+                '--category=Comedy',
+                path])
         subprocess.call(args)
     else:
         print('File not found: ' + path)
