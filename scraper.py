@@ -70,9 +70,9 @@ def download_vines(data):
                     fd.write(chunk)
 
 
-def update_records(data):
+def update_records(data, path):
     #gets real path of file
-    filename = ap('records.csv')
+    filename = ap('meta/' + path)
     #if the file exsts, combine file with new data
     if osp.isfile(filename):
         records = pd.read_csv(filename, encoding='utf-8')
@@ -103,6 +103,20 @@ def get_trending_tags():
     return tags
 
 
+def scrape_channels(feed):
+    channels = {'comedy': 1, 'art': 2, 'cats': 3, 'dogs': 4, 'places': 5,
+                'urban': 6, 'family': 7, 'specialfx': 8, 'sports': 9,
+                'food': 10, 'music': 11, 'fashion': 12, 'healthandfitness': 13,
+                'news': 14, 'weirdbanner': 15, 'scary': 16, 'animals': 17}
+    for channel, cid in channels.iteritems():
+        cdf = scrape('timelines/channels/', str(cid) + '/' + feed)
+        update_records(cdf, channel + '.csv')
+
+
+def read_playlists():
+    playlists = pd.read_csv('playlists.csv')
+
+
 if __name__ == "__main__":
         if len(sys.argv) > 1:
             if '--flush' in sys.argv:
@@ -114,6 +128,4 @@ if __name__ == "__main__":
             if '--upload' in sys.argv:
                 upload_video(ap('render/groups/FINAL RENDER.mp4'))
         else:
-            data = scrape('timelines', term='popular')
-            if not data.empty:
-                update_records(data)
+            scrape_channels('popular')
