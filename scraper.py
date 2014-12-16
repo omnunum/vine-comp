@@ -12,7 +12,7 @@ from lxml import html
 import requests as rq
 import subprocess
 from shared import *
-import thread
+from threading import Thread
 
 
 def scrape(endpoint, term=''):
@@ -20,6 +20,7 @@ def scrape(endpoint, term=''):
     success = True
     page = 0
     url = 'https://vine.co/api/{0}/{1}'.format(endpoint, term)
+    vines = ''
     while success:
         if page > 0:
             url = url.split('?')[0] + '?page=' + str(page)
@@ -135,16 +136,24 @@ def scrape_channels(feed):
                 'urban': 6, 'family': 7, 'specialfx': 8, 'sports': 9,
                 'food': 10, 'music': 11, 'fashion': 12, 'healthandfitness': 13,
                 'news': 14, 'weirdbanner': 15, 'scary': 16, 'animals': 17}
+    threads = []
     for channel, cid in channels.iteritems():
-        thread.start_new_thread(tscrape, ('channels', str(cid), feed, channel, ap('meta')))
+        t = Thread(target=tscrape, args=('channels', str(cid),
+                                         feed, channel, ap('meta')))
+        threads.append(t)
+        t.start()
         #tscrape('channels', str(cid), feed, channel, ap('meta'))
 
 
 def read_playlists(feed):
     playlists = pd.read_csv(ap('meta/playlists.csv'))
+    threads = []
     for i, row in playlists.iterrows():
         for tag in row['tags'].split(' '):
-            thread.start_new_thread(tscrape, ('tags', tag, feed, row['name'], ap('meta')))
+            t = Thread(target=tscrape, args=('tags', tag,
+                                             feed, row['name'], ap('meta')))
+            threads.append(t)
+            t.start()
             #tscrape('tags', tag, feed, row['name'], ap('meta'))
 
 if __name__ == "__main__":
