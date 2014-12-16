@@ -55,6 +55,8 @@ def scrape(endpoint, term=''):
         subset['id'] = [get_id(perma) for perma in subset['permalinkUrl']]
         sort = sort_clean(subset)
         return sort
+    else:
+        return pd.DataFrame()
 
 
 def download_vines(data):
