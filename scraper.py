@@ -8,6 +8,7 @@ Created on Wed Dec 10 22:18:28 2014
 import pandas as pd
 import os.path as osp
 import sys
+from lxml import html
 import requests as rq
 import subprocess
 from shared import *
@@ -95,9 +96,14 @@ def upload_video(path):
         print('File not found: ' + path)
 
 
+def get_trending_tags():
+    explore_page = rq.get('https://vine.co/explore')
+    tree = html.fromstring(explore_page.text)
+    tags = tree.xpath('//section[@id="trending"]//a/text()')
+    return tags
+
+
 if __name__ == "__main__":
-    data = scrape('timelines', term='popular')
-    if not data.empty:
         if len(sys.argv) > 1:
             if '--flush' in sys.argv:
                 flush_all()
@@ -108,4 +114,6 @@ if __name__ == "__main__":
             if '--upload' in sys.argv:
                 upload_video(ap('render/groups/FINAL RENDER.mp4'))
         else:
-            update_records(data)
+            data = scrape('timelines', term='popular')
+            if not data.empty:
+                update_records(data)
