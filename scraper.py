@@ -110,7 +110,7 @@ def scrape_channels(feed):
                 'food': 10, 'music': 11, 'fashion': 12, 'healthandfitness': 13,
                 'news': 14, 'weirdbanner': 15, 'scary': 16, 'animals': 17}
     for channel, cid in channels.iteritems():
-        cdf = scrape('timelines/channels/', str(cid) + '/' + feed)
+        cdf = scrape('timelines/channels', str(cid) + '/' + feed)
         update_records(cdf, channel + '.csv')
 
 
