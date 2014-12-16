@@ -41,19 +41,20 @@ def scrape(endpoint, term=''):
             page += 1
         else:
             success = False
-    #expands the loops column's objects into count and velocity columns
-    loops = comp['loops'].apply(lambda x: pd.Series(x))
-    unstacked = loops.unstack().unstack().T[['count', 'velocity']]
-    #adds the new columns to the previous page composite
-    comp[['count', 'velocity']] = unstacked
-    #takes the columns we need
-    subset = comp[['count', 'velocity', 'videoUrl',
-                   'permalinkUrl', 'description', 'username']].copy()
-    #extracts the vineid from the permalink
-    get_id = lambda x: x.rsplit('/', 1)[-1]
-    subset['id'] = [get_id(perma) for perma in subset['permalinkUrl']]
-    sort = sort_clean(subset)
-    return sort
+    if page > 0:
+        #expands the loops column's objects into count and velocity columns
+        loops = comp['loops'].apply(lambda x: pd.Series(x))
+        unstacked = loops.unstack().unstack().T[['count', 'velocity']]
+        #adds the new columns to the previous page composite
+        comp[['count', 'velocity']] = unstacked
+        #takes the columns we need
+        subset = comp[['count', 'velocity', 'videoUrl',
+                       'permalinkUrl', 'description', 'username']].copy()
+        #extracts the vineid from the permalink
+        get_id = lambda x: x.rsplit('/', 1)[-1]
+        subset['id'] = [get_id(perma) for perma in subset['permalinkUrl']]
+        sort = sort_clean(subset)
+        return sort
 
 
 def download_vines(data):
