@@ -8,6 +8,7 @@ import os
 import os.path as osp
 import sys
 import pandas as pd
+import re
 
 
 #sorts the rows by the loop count, drop duplicates, and resets the index
@@ -47,14 +48,14 @@ def delete_file(path):
 #gets rid of all files in the render and cache directories as well as
 #the vine records csv and leftover temp mp3 audio clips
 def flush_all():
-    for directory in ['render/', 'render/groups/', 'cache/']:
+    for directory in ['render/', 'render/groups/', 'cache/', 'meta/']:
         for vfile in os.listdir(ap(directory)):
-            delete_file(directory + vfile)
+            if not re.match('playlists.csv', vfile):
+                delete_file(directory + vfile)
     for vfile in os.listdir(ap('')):
         if vfile.endswith('.mp3'):
             print('removing: ' + vfile)
             delete_file(vfile)
-    delete_file('records.csv')
 
 
 def group_data(data, group_size):

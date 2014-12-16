@@ -1,7 +1,7 @@
 cache/*
 render/groups/*
 meta/*.csv
-records.csv
+!meta/playlists.csv
 *.py[cod]
 ~lock*#
 *~

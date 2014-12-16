@@ -137,7 +137,8 @@ def scrape_channels(feed):
                 'news': 14, 'weirdbanner': 15, 'scary': 16, 'animals': 17}
     for channel, cid in channels.iteritems():
         thread.start_new_thread(tscrape, ('channels', str(cid), feed, channel, ap('meta')))
-        #tscrape('channels', str(cid), feed, channel, ap('mets'))
+        #tscrape('channels', str(cid), feed, channel, ap('meta'))
+
 
 def read_playlists(feed):
     playlists = pd.read_csv(ap('meta/playlists.csv'))
