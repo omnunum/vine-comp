@@ -12,6 +12,7 @@ from lxml import html
 import requests as rq
 import subprocess
 from shared import *
+import thread
 
 
 def scrape(endpoint, term=''):
@@ -23,7 +24,7 @@ def scrape(endpoint, term=''):
         if page > 0:
             url = url.split('?')[0] + '?page=' + str(page)
         try:
-            print('Attempting to scrape: ' + url)
+            #print('Attempting to scrape: ' + url)
             vines = rq.get(url).json()
         except Exception as e:
             print('Failed to scrape!')
@@ -31,7 +32,7 @@ def scrape(endpoint, term=''):
         if len(vines['data']['records']) > 0:
             #the meat of the json object we're looking for, vine entries
             df = pd.DataFrame.from_dict(vines['data']['records'])
-            print('Scrape successful! Downloaded {0} entries'.format(len(df.index)))
+            #print('Scrape successful! Downloaded {0} entries'.format(len(df.index)))
             #if this is the first page, start comp as a copy of the page
             if page == 0:
                 comp = df.copy()
@@ -73,17 +74,21 @@ def download_vines(data):
                     fd.write(chunk)
 
 
-def update_records(data, path):
-    #gets real path of file
-    filename = ap('meta/' + path)
+def update_records(data, abs_path):
+    #gets pathfile passed in before thread started
+    filename = abs_path
     #if the file exsts, combine file with new data
-    if osp.isfile(filename):
-        records = pd.read_csv(filename, encoding='utf-8')
-        comp = sort_clean(pd.concat([data, records], ignore_index=True))
-        comp.to_csv(filename, index=False, encoding='utf-8')
-    #if file doesn't exist, save it for the first time
-    else:
-        data.to_csv(filename, index=False, encoding='utf-8')
+    try:
+        if osp.isfile(filename):
+            records = pd.read_csv(filename, encoding='utf-8')
+            comp = sort_clean(pd.concat([data, records], ignore_index=True))
+            comp.to_csv(filename, index=False, encoding='utf-8')
+        #if file doesn't exist, save it for the first time
+        else:
+            print
+            data.to_csv(filename, index=False, encoding='utf-8')
+    except Exception as e:
+                print(e)
 
 
 def upload_video(path):
@@ -107,13 +112,20 @@ def get_trending_tags():
 
 
 def scrape_channels(feed):
+    def tscrape(cid, feed, channel, dir_path):
+            cdf = scrape('timelines/channels', str(cid) + '/' + feed)
+            if not cdf.empty:
+                try:
+                    update_records(cdf, dir_path + channel + '.csv')
+                except Exception as e:
+                    print(e)
+
     channels = {'comedy': 1, 'art': 2, 'cats': 3, 'dogs': 4, 'places': 5,
                 'urban': 6, 'family': 7, 'specialfx': 8, 'sports': 9,
                 'food': 10, 'music': 11, 'fashion': 12, 'healthandfitness': 13,
                 'news': 14, 'weirdbanner': 15, 'scary': 16, 'animals': 17}
     for channel, cid in channels.iteritems():
-        cdf = scrape('timelines/channels', str(cid) + '/' + feed)
-        update_records(cdf, channel + '.csv')
+        thread.start_new_thread(tscrape, (cid, feed, channel, ap('')))
 
 
 def read_playlists():

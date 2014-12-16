@@ -1,6 +1,6 @@
 cache/*
 render/groups/*
-meta/*
+meta/*.csv
 records.csv
 *.py[cod]
 ~lock*#
