@@ -47,8 +47,7 @@ def delete_file(path):
 #gets rid of all files in the render and cache directories as well as
 #the vine records csv and leftover temp mp3 audio clips
 def flush_all():
-    for directory in ['render/', 'render/groups/',
-                      'cache/meta/', 'cache/videos/']:
+    for directory in ['render/', 'render/groups/', 'cache/']:
         for vfile in os.listdir(ap(directory)):
             delete_file(directory + vfile)
     for vfile in os.listdir(ap('')):
