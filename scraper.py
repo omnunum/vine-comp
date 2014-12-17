@@ -13,7 +13,9 @@ import requests as rq
 import subprocess
 from shared import *
 from threading import Thread
-
+import getopt
+from datetime import datetime as dt
+import Queue
 
 def scrape(endpoint, term=''):
     comp = pd.DataFrame()
@@ -67,15 +69,24 @@ def scrape(endpoint, term=''):
 def download_vines(data):
     #zip the data we need so we can run through with one loop
     zipped = zip(data['videoUrl'], data['id'], data['description'])
-    for url, perma, desc in zipped[:100]:
-        name = perma
-        filename = ap('cache/' + name + '.mp4')
+    for url, vineid, desc in zipped:
+        filename = ap('cache/' + str(vineid) + '.mp4')
         # Download the file if it does not exist
         if not osp.isfile(filename):
-            print('downloading ' + perma + ': ' + desc)
+            print('downloading ' + str(vineid) + ': ' + str(desc.encode('utf8')))
             with open(filename, 'wb') as fd:
                 for chunk in rq.get(url, stream=True).iter_content(5000):
                     fd.write(chunk)
+
+
+def load_metadata(name):
+    path = ap('meta/' + name + '.csv')
+    if osp.isfile(path):
+        try:
+            df = pd.read_csv(path, encoding='utf-8')
+            return df.ix[:, :100]
+        except Exception as e:
+            print(e)
 
 
 def update_records(data, abs_path):
@@ -115,6 +126,11 @@ def get_trending_tags():
     tree = html.fromstring(explore_page.text)
     #XPATH query to grab all of the trending tag link element strings
     tags = tree.xpath('//section[@id="trending"]//a/text()')
+    data = [dt.now(), ' '.join(tags)]
+    try:
+        update_records(pd.DataFrame(data, ap('meta/trending')))
+    except Exception as e:
+        print(e)
     return tags
 
 
@@ -131,41 +147,59 @@ def tscrape(endpoint, term, feed, name, dir_path):
             print(e)
 
 
-def scrape_channels(feed):
+class ThreadScrape(Thread):
+
+    def __init__(self, queue):
+        Thread.__init__(self)
+        self.q = queue
+
+    def run(self):
+        args = self.q.get()
+        endpoint, term, feed, name, dir_path = args
+        if not feed == '':
+            feed = '/' + feed
+        cdf = scrape('timelines/' + endpoint, term + feed)
+        if not cdf.empty:
+            try:
+                update_records(cdf, dir_path + '/' + name + '.csv')
+            except Exception as e:
+                print(e)
+        self.q.task_done()
+
+
+def scrape_all():
     channels = {'comedy': 1, 'art': 2, 'cats': 3, 'dogs': 4, 'places': 5,
                 'urban': 6, 'family': 7, 'specialfx': 8, 'sports': 9,
                 'food': 10, 'music': 11, 'fashion': 12, 'healthandfitness': 13,
                 'news': 14, 'weirdbanner': 15, 'scary': 16, 'animals': 17}
-    threads = []
+    playlists = []
+    try:
+        playlists = pd.read_csv(ap('meta/playlists.csv'))
+    except Exception as e:
+        print(e)
+    q = Queue.Queue()
+    thread_pool(q, 10, ThreadScrape)
     for channel, cid in channels.iteritems():
-        t = Thread(target=tscrape, args=('channels', str(cid),
-                                         feed, channel, ap('meta')))
-        threads.append(t)
-        t.start()
-        #tscrape('channels', str(cid), feed, channel, ap('meta'))
-
-
-def read_playlists(feed):
-    playlists = pd.read_csv(ap('meta/playlists.csv'))
-    threads = []
+        #queue data: endpoint, term, feed, name, dir_path
+        q.put(('channels', str(cid), 'popular', channel, ap('meta')))
     for i, row in playlists.iterrows():
         for tag in row['tags'].split(' '):
-            t = Thread(target=tscrape, args=('tags', tag,
-                                             feed, row['name'], ap('meta')))
-            threads.append(t)
-            t.start()
-            #tscrape('tags', tag, feed, row['name'], ap('meta'))
+            q.put(('tags', tag, '', row['name'], ap('meta')))
+    q.join()
+
 
 if __name__ == "__main__":
-        if len(sys.argv) > 1:
-            if '--flush' in sys.argv:
-                flush_all()
-            if '--update' in sys.argv:
-                update_records(data)
-            if '--download' in sys.argv:
-                download_vines(data)
-            if '--upload' in sys.argv:
-                upload_video(ap('render/groups/FINAL RENDER.mp4'))
-        else:
-            scrape_channels('popular')
-            read_playlists('')
+    options, remainder = getopt.gnu_getopt(sys.argv[1:], '',
+                                           ['download=', 'flush',
+                                            'update', 'upload'])
+    for opt, arg in options:
+        if opt == '--flush':
+            flush_all()
+        elif opt == '--download':
+            download_vines(load_metadata(arg))
+        elif opt == '--update':
+            #scrape_channels('popular')
+            #scrape_playlists()
+            scrape_all()
+        elif opt == '--upload':
+            upload_video(ap('render/groups/FINAL RENDER.mp4'))

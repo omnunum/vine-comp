@@ -11,6 +11,14 @@ import pandas as pd
 import re
 
 
+#populates a threadpool in the given queue with the passed class
+def thread_pool(q, maxthreads, ThreadClass):
+    for x in range(maxthreads):
+        t = ThreadClass(q)
+        t.setDaemon(True)
+        t.start()
+
+
 #sorts the rows by the loop count, drop duplicates, and resets the index
 def sort_clean(data):
     data_sorted = data.sort(columns=['count'], ascending=False)

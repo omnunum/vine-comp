@@ -80,6 +80,6 @@ def concat_vines(data):
 
 
 if __name__ == '__main__':
-    data = pd.read_csv(ap('records.csv'), encoding='utf-8')
+    data = pd.read_csv(ap('meta/records.csv'), encoding='utf-8')
     render_vines(data)
     concat_vines(data)
