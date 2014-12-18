@@ -45,7 +45,7 @@ def scrape(pagelim, endpoint, term=''):
                 #else add current page to the comp
                 else:
                     comp = pd.concat([df, comp], ignore_index=True)
-                if page < pagelim:
+                if page < pagelim or pagelim == -1:
                     page += 1
                 else:
                     success = False
@@ -196,18 +196,17 @@ def scrape_all(pagelim):
 
 
 if __name__ == "__main__":
-    options, remainder = getopt.gnu_getopt(sys.argv[1:], '',
+    options, remainder = getopt.gnu_getopt(sys.argv[1:], 'u:f',
                                            ['download=', 'flush',
-                                            'update', 'upload'])
+                                            'update=', 'upload'])
     for opt, arg in options:
-        if opt == '--flush':
+        if opt in ['--flush', '-f']:
             flush_all()
         elif opt == '--download':
             download_vines(load_metadata(arg))
         elif opt == '--update':
-            #scrape_channels('popular')
-            #scrape_playlists()
-            scrape_all(3)
+            scrape_all(int(arg))
+        elif opt == '-u':
+            scrape_all(-1)
         elif opt == '--upload':
             upload_video(ap('render/groups/FINAL RENDER.mp4'))
-    
