@@ -166,7 +166,7 @@ class ThreadScrape(Thread):
 
 
 def scrape_all(pagelim):
-    channels = {'art': 2, 'places': 5, 'family': 7,
+    channels = {'comedy': 1, 'art': 2, 'places': 5, 'family': 7,
                 'food': 10, 'music': 11, 'fashion': 12, 'news': 14,
                 'scary': 16, 'animals': 17}
     q = Queue.Queue()
@@ -210,5 +210,4 @@ if __name__ == "__main__":
             scrape_all(3)
         elif opt == '--upload':
             upload_video(ap('render/groups/FINAL RENDER.mp4'))
-    scrape_all(3)
     
