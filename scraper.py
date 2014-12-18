@@ -16,6 +16,8 @@ from threading import Thread
 import getopt
 from datetime import datetime as dt
 import Queue
+from unicodedata import normalize
+
 
 def scrape(endpoint, term=''):
     comp = pd.DataFrame()
@@ -26,37 +28,42 @@ def scrape(endpoint, term=''):
     while success:
         if page > 0:
             url = url.split('?')[0] + '?page=' + str(page)
-        try:
-            print('Attempting to scrape: ' + url)
-            vines = rq.get(url).json()
-        except Exception as e:
-            print('Failed to scrape!')
-            print(e)
-        if vines['success']:
-            if len(vines['data']['records']) > 0:
-                #the meat of the json object we're looking for, vine entries
-                df = pd.DataFrame.from_dict(vines['data']['records'])
-                print('Scrape successful! Downloaded {0} entries'.format(len(df.index)))
-                #if this is the first page, start comp as a copy of the page
-                if page == 0:
-                    comp = df.copy()
-                #else add current page to the comp
-                else:
-                    comp = pd.concat([df, comp], ignore_index=True)
-                page += 1
-            else:
-                success = False
         else:
-            success = False
+            print('Attempting to scrape: ' + url)
+        try:
+            vines = rq.get(url).json()
+            if vines['success']:
+                if len(vines['data']['records']) > 0:
+                    #the meat of the json object we're looking for, vine entries
+                    df = pd.DataFrame.from_dict(vines['data']['records'])
+                    ##print('Scrape successful! Downloaded {0} entries'.format(len(df.index)))
+                    #if this is the first page, start comp as a copy of the page
+                    if page == 0:
+                        comp = df.copy()
+                    #else add current page to the comp
+                    else:
+                        comp = pd.concat([df, comp], ignore_index=True)
+                    page += 1
+                else:
+                    print('Finished scraping at: ' + url)
+                    success = False
+            else:
+                print('API request failed, endpoint/term not valid')
+                success = False
+        except Exception as e:
+            print(e)
     if page > 0:
         #expands the loops column's objects into count and velocity columns
         loops = comp['loops'].apply(lambda x: pd.Series(x))
         unstacked = loops.unstack().unstack().T[['count', 'velocity']]
-        #adds the new columns to the previous page composite
-        comp[['count', 'velocity']] = unstacked
         #takes the columns we need
-        subset = comp[['count', 'velocity', 'videoUrl',
-                       'permalinkUrl', 'description', 'username']].copy()
+        subset = comp[['videoUrl', 'permalinkUrl', 'username']].astype(basestring).copy()
+        #adds the new columns to the previous page composite
+        subset['count'] = unstacked['count'].astype(int)
+        subset['velocity'] = unstacked['velocity'].astype(float)
+        #converts utf-8 strings to ascii by dropping invalid characters
+        enc_str = lambda x: normalize('NFKD', x).encode('ascii', 'ignore')
+        subset['description'] = comp['description'].astype(basestring).map(enc_str)
         #extracts the vineid from the permalink
         get_id = lambda x: x.rsplit('/', 1)[-1]
         subset['id'] = [get_id(perma) for perma in subset['permalinkUrl']]
@@ -134,19 +141,6 @@ def get_trending_tags():
     return tags
 
 
-#function to thread, needs save directory path to be specified from the
-#original python instance or else it won't save properly
-def tscrape(endpoint, term, feed, name, dir_path):
-    if not feed == '':
-        feed = '/' + feed
-    cdf = scrape('timelines/' + endpoint, term + feed)
-    if not cdf.empty:
-        try:
-            update_records(cdf, dir_path + '/' + name + '.csv')
-        except Exception as e:
-            print(e)
-
-
 class ThreadScrape(Thread):
 
     def __init__(self, queue):
@@ -164,14 +158,15 @@ class ThreadScrape(Thread):
                 update_records(cdf, dir_path + '/' + name + '.csv')
             except Exception as e:
                 print(e)
+        else:
+            print(term + ' came up empty')
         self.q.task_done()
 
 
 def scrape_all():
-    channels = {'comedy': 1, 'art': 2, 'cats': 3, 'dogs': 4, 'places': 5,
-                'urban': 6, 'family': 7, 'specialfx': 8, 'sports': 9,
-                'food': 10, 'music': 11, 'fashion': 12, 'healthandfitness': 13,
-                'news': 14, 'weirdbanner': 15, 'scary': 16, 'animals': 17}
+    channels = {'comedy': 1, 'art': 2, 'places': 5, 'family': 7, 'sports': 9,
+                'food': 10, 'music': 11, 'fashion': 12, 'news': 14,
+                'scary': 16, 'animals': 17}
     playlists = []
     try:
         playlists = pd.read_csv(ap('meta/playlists.csv'))
@@ -183,8 +178,12 @@ def scrape_all():
         #queue data: endpoint, term, feed, name, dir_path
         q.put(('channels', str(cid), 'popular', channel, ap('meta')))
     for i, row in playlists.iterrows():
-        for tag in row['tags'].split(' '):
+        tags = str(row['tags']).split(' ')
+        users = str(row['users']).split(' ')
+        for tag in tags:
             q.put(('tags', tag, '', row['name'], ap('meta')))
+        for user in users:
+            q.put(('users', user, '', row['name'], ap('meta')))
     q.join()
 
 
