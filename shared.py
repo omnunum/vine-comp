@@ -9,6 +9,7 @@ import os.path as osp
 import sys
 import pandas as pd
 import re
+from unicodedata import normalize
 
 
 #populates a threadpool in the given queue with the passed class
@@ -18,6 +19,9 @@ def thread_pool(q, maxthreads, ThreadClass):
         t.setDaemon(True)
         t.start()
 
+
+#converts utf-8 strings to ascii by dropping invalid characters
+enc_str = lambda x: normalize('NFKD', x).encode('ascii', 'ignore')
 
 #sorts the rows by the loop count, drop duplicates, and resets the index
 def sort_clean(data):

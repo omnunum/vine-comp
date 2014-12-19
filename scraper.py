@@ -16,7 +16,6 @@ from threading import Thread
 import getopt
 from datetime import datetime as dt
 import Queue
-from unicodedata import normalize
 
 
 def scrape(pagelim, endpoint, term=''):
@@ -64,8 +63,6 @@ def scrape(pagelim, endpoint, term=''):
         #adds the new columns to the previous page composite
         subset['count'] = unstacked['count'].astype(int)
         subset['velocity'] = unstacked['velocity'].astype(float)
-        #converts utf-8 strings to ascii by dropping invalid characters
-        enc_str = lambda x: normalize('NFKD', x).encode('ascii', 'ignore')
         subset['description'] = comp['description'].astype(basestring).map(enc_str)
         #extracts the vineid from the permalink
         get_id = lambda x: x.rsplit('/', 1)[-1]
@@ -77,19 +74,41 @@ def scrape(pagelim, endpoint, term=''):
 
 
 def download_vines(data):
-    #zip the data we need so we can run through with one loop
-    zipped = zip(data['videoUrl'], data['id'], data['description'])
-    for url, vineid, desc in zipped:
-        filename = ap('cache/' + str(vineid) + '.mp4')
-        # Download the file if it does not exist
-        if not osp.isfile(filename):
-            print('downloading ' + str(vineid) + ': ' + str(desc.encode('utf8')))
-            with open(filename, 'wb') as fd:
-                for chunk in rq.get(url, stream=True).iter_content(5000):
-                    fd.write(chunk)
+    q = Queue.Queue()
+    dir_path = ap('')
+    thread_pool(q, 10, ThreadDLVines)
+    
+    for i, row in data.iterrows():
+        q.put((row, dir_path))
+    q.join()
+    
+class ThreadDLVines(Thread):
+
+    def __init__(self, queue):
+        self.q = queue
+        Thread.__init__(self)
+
+    def run(self):
+        while True:
+            data, dir_path = self.q.get()
+            url = data['videoUrl']
+            vineid = str(data['id'])
+            desc = data['description']
+            if isinstance(desc, basestring):
+                desc = enc_str(desc)
+            elif isinstance(desc, float):
+                desc = str(int(desc))
+            filename = dir_path + 'cache/' + vineid + '.mp4'
+            # Download the file if it does not exist
+            if not osp.isfile(filename):
+                print('downloading ' + vineid + ': ' + desc)
+                with open(filename, 'wb') as fd:
+                    for chunk in rq.get(url, stream=True).iter_content(5000):
+                        fd.write(chunk)
+            self.q.task_done()
 
 
-def load_metadata(name):
+def load_top_100(name):
     path = ap('meta/' + name + '.csv')
     if osp.isfile(path):
         try:
@@ -196,14 +215,14 @@ def scrape_all(pagelim):
 
 
 if __name__ == "__main__":
-    options, remainder = getopt.gnu_getopt(sys.argv[1:], 'u:f',
+    options, remainder = getopt.gnu_getopt(sys.argv[1:], ':uf',
                                            ['download=', 'flush',
                                             'update=', 'upload'])
     for opt, arg in options:
         if opt in ['--flush', '-f']:
             flush_all()
         elif opt == '--download':
-            download_vines(load_metadata(arg))
+            download_vines(load_top_100(arg))
         elif opt == '--update':
             scrape_all(int(arg))
         elif opt == '-u':
