@@ -96,6 +96,8 @@ class ThreadDLVines(Thread):
             desc = data['description']
             if isinstance(desc, basestring) and not pd.isnull(desc):
                 desc = enc_str(desc)
+            else:
+                desc = ''
             filename = dir_path + 'cache/' + vineid + '.mp4'
             # Download the file if it does not exist
             if not osp.isfile(filename):
