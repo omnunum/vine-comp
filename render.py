@@ -10,8 +10,6 @@ from shared import *
 from moviepy import editor as mpe
 import os
 from os import path as osp
-from threading import Thread
-from Queue import Queue
 
 
 def vfc_from_file(filename, directory):
@@ -21,6 +19,11 @@ def vfc_from_file(filename, directory):
         return video
     except Exception as e:
         print(e)
+
+
+def write_x264(vfc, path):
+    vfc.write_videofile(path, codec='libx264',
+                        threads=4, verbose=True, fps=30)
 
 
 def render_vines(data):
@@ -50,8 +53,7 @@ def render_vines(data):
             comp = mpe.CompositeVideoClip([vine, user_osd, desc_osd])
             #start the render
             path = ap('render/' + vineid + '.mp4')
-            comp.write_videofile(path, codec='libx264',
-                                 threads=4, verbose=True, fps=30)
+            write_x264(comp, path)
         else:
             print('skipping ' + vineid)
 
