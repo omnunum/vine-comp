@@ -45,8 +45,8 @@ def render_vines(data):
     q = Queue()
     thread_pool(q, 3, ThreadWritex264)
     for i, row in datav.iterrows():
-        if row['id'] not in datavrid:
-            vineid = row['id']
+        vineid = row['id']
+        if vineid not in datavrid:
             vine = vfc_from_file(vineid, 'cache').on_color(size=(854, 480),
                                                            color=(20, 20, 25),
                                                            pos='center')
