@@ -13,9 +13,9 @@ import requests as rq
 import subprocess
 from shared import *
 from threading import Thread
+from Queue import Queue
 import getopt
 from datetime import datetime as dt
-import Queue
 
 
 def scrape(pagelim, endpoint, term=''):
@@ -74,9 +74,9 @@ def scrape(pagelim, endpoint, term=''):
 
 
 def download_vines(data):
-    q = Queue.Queue()
+    q = Queue()
     dir_path = ap('')
-    thread_pool(q, 10, ThreadDLVines)
+    thread_pool(q, 5, ThreadDLVines)
     
     for i, row in data.iterrows():
         q.put((row, dir_path))
@@ -113,7 +113,7 @@ def load_top_100(name):
     if osp.isfile(path):
         try:
             df = pd.read_csv(path, encoding='utf-8')
-            return df.ix[:, :100]
+            return df.ix[:100, :]
         except Exception as e:
             print(e)
 
@@ -129,7 +129,6 @@ def update_records(data, abs_path):
     #if file doesn't exist, save it for the first time
     else:
         data.to_csv(filename, index=False, encoding='utf-8')
-
 
 
 def upload_video(path):
@@ -222,7 +221,9 @@ if __name__ == "__main__":
         if opt in ['--flush', '-f']:
             flush_all()
         elif opt == '--download':
-            download_vines(load_top_100(arg))
+            data = load_top_100(arg)
+            download_vines(data)
+            update_records(data, ap('cache/' + arg + '.csv'))
         elif opt == '--update':
             scrape_all(int(arg))
         elif opt == '-u':

@@ -10,6 +10,8 @@ from shared import *
 from moviepy import editor as mpe
 import os
 from os import path as osp
+from threading import Thread
+from Queue import Queue
 
 
 def vfc_from_file(filename, directory):
@@ -28,7 +30,53 @@ def write_x264(vfc, path):
     except Exception as e:
         print(e)
 
+class ThreadWritex264(Thread):
 
+    def __init__(self, queue):
+        self.q = queue
+        Thread.__init__(self)
+
+    def run(self):
+        while True:
+            vfc, path = self.q.get()
+            vfc.write_videofile(path, codec='libx264',
+                            threads=2, verbose=True, fps=30)
+            self.q.task_done()
+
+def render_all(data):
+    #converts specified index to ascii so it can be rendered
+    encode_index = lambda data, index: (data.astype(basestring)[index]
+                                            .encode('ascii', 'ignore'))
+    #verify files exist in cache folder
+    datav = exists(data, 'cache')
+    #files already rendered get skipped
+    datavrid = list(exists(data, 'render')['id'].astype(basestring))
+    q = Queue()
+    thread_pool(q, 3, ThreadWritex264)
+    for i, vineid in enumerate(datav['id'].astype(basestring)):
+        if vineid not in datavrid:
+            vine = vfc_from_file(vineid, 'cache').on_color(size=(854, 480),
+                                                           color=(20, 20, 25),
+                                                           pos='center')
+            #encodes text as ascii for textclip creation
+            user = encode_index(data['username'], i)
+            desc = encode_index(data['description'], i)
+            user = 'Vine By:\n' + user
+            #lambda to create text clip
+            tc = lambda text, size, xline: (mpe.TextClip(txt=text, size=(180, 480),
+                                            method='caption', align='center',
+                                            font='arial', fontsize=size,
+                                            color='white', interline=xline)
+                                    .set_duration(vine.duration))
+            user_osd = tc(user, 40, 20)
+            desc_osd = tc(desc, 28, 13).set_pos('right')
+            #composite the text on the sides of the video
+            comp = mpe.CompositeVideoClip([vine, user_osd, desc_osd])
+            #start the render
+            q.put((comp, ap('render/' + vineid + '.mp4')))
+        else:
+            print('skipping ' + vineid)
+    q.join()
 def render_vines(data):
     #converts specified index to ascii so it can be rendered
     encode_index = lambda data, index: (data.astype(basestring)[index]
@@ -80,6 +128,6 @@ def concat_vines(data):
 
 
 if __name__ == '__main__':
-    data = pd.read_csv(ap('meta/records.csv'), encoding='utf-8')
-    render_vines(data)
+    data = pd.read_csv(ap('meta/worldstarhiphop.csv'), encoding='utf-8')
+    render_all(data)
     concat_vines(data)
