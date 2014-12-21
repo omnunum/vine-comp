@@ -58,9 +58,9 @@ def render_vines(data):
             print('skipping ' + vineid)
 
 
-def concat_groups(data):
+def concat_vines(data, name):
     datavid = exists(data, 'render')['id']
-    groups = group_data(datavid, 20)
+    groups = group_data(datavid, 50)
     if not osp.isdir(ap('render/groups')):
         os.makedirs('render/groups')
     #lambda to get VideoFileClip from group number
@@ -72,19 +72,9 @@ def concat_groups(data):
         write_x264(concat, group_render_path('group_' + str(i)))
     videos = [vfcg(groupid) for groupid in range(len(groups))]
     concat = mpe.concatenate_videoclips(videos)
-    write_x264(concat, group_render_path("FINAL RENDER"))
-
-
-def concat_vines(data, name):
-    datavid = exists(data, 'render')['id']
-    videos = [vfc_from_file(vid, 'render') for vid in datavid]
-    concat = mpe.concatenate_videoclips(videos)
-    if not osp.isdir(ap('render/finals')):
-        os.makedirs('render/finals')
-    write_x264(concat, ap('render/finals/' + name + '.mp4'))
-
+    write_x264(concat, group_render_path(name))
 
 if __name__ == '__main__':
     data = pd.read_csv(ap('meta/worldstarhiphop.csv'), encoding='utf-8')
     render_vines(data)
-    concat_vines(data)
+    concat_vines(data, 'worldstarhiphop')
