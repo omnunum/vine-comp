@@ -77,10 +77,9 @@ def render_all(data):
         else:
             print('skipping ' + vineid)
     q.join()
+
+
 def render_vines(data):
-    #converts specified index to ascii so it can be rendered
-    encode_index = lambda data, index: (data.astype(basestring)[index]
-                                            .encode('ascii', 'ignore'))
     #verify files exist in cache folder
     datav = exists(data, 'cache')
     #files already rendered get skipped
@@ -91,8 +90,8 @@ def render_vines(data):
                                                            color=(20, 20, 25),
                                                            pos='center')
             #encodes text as ascii for textclip creation
-            user = encode_index(data['username'], i)
-            desc = encode_index(data['description'], i)
+            user = enco_str(data['username'][i])
+            desc = enco_str(data['description'][i])
             user = 'Vine By:\n' + user
             #lambda to create text clip
             tc = lambda text, size, xline: (mpe.TextClip(txt=text, size=(180, 480),

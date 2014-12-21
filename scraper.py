@@ -6,6 +6,7 @@ Created on Wed Dec 10 22:18:28 2014
 """
 
 import pandas as pd
+import numpy as np
 import os.path as osp
 import sys
 from lxml import html
@@ -52,7 +53,7 @@ def scrape(pagelim, endpoint, term=''):
                 print('Finished scraping at: ' + url)
                 success = False
         else:
-            print('API request failed, endpoint/term not valid')
+            print('API request failed, {0}/{1} not valid'.format(endpoint, term))
             success = False
     if page > 0:
         #expands the loops column's objects into count and velocity columns
@@ -171,7 +172,7 @@ class ThreadScrape(Thread):
             endpoint, term, feed, name, dir_path, pagelim = args
             if not feed == '':
                 feed = '/' + feed
-            cdf = scrape(pagelim, 'timelines/' + endpoint, term + feed)
+            cdf = scrape(pagelim, 'timelines/' + endpoint, term=term + feed)
             if not cdf.empty:
                 try:
                     update_records(cdf, dir_path + '/' + name + '.csv')
@@ -187,7 +188,7 @@ def scrape_all(pagelim):
     channels = {'comedy': 1, 'art': 2, 'places': 5, 'family': 7,
                 'food': 10, 'music': 11, 'fashion': 12, 'news': 14,
                 'scary': 16, 'animals': 17}
-    q = Queue.Queue()
+    q = Queue()
     thread_pool(q, 10, ThreadScrape)
     for channel, cid in channels.iteritems():
         #queue data: endpoint, term, feed, name, dir_path
@@ -195,20 +196,17 @@ def scrape_all(pagelim):
     playlists = []
     try:
         playlists = pd.read_csv(ap('meta/playlists.csv'), dtype=basestring)
-        #for some reason I have to manually convert the data instead
-        #of specifying the dtype on read
-        convert = lambda x: str(int(x)) if (isinstance(x, float) != pd.isnull(x)) else str(x)
-        playlists = playlists.applymap(convert)
+        playlists = playlists.replace(np.nan, '', regex=True)
     except Exception as e:
         print(e)
     for i, row in playlists.iterrows():
         tags = str(row['tags']).split(' ')
         users = str(row['users']).split(' ')
         for tag in tags:
-            if not pd.isnull(tag) and 'nan' not in tag:
+            if not pd.isnull(tag) and tag not in ['nan', '']:
                 q.put(('tags', tag, '', row['name'], ap('meta'), 5))
         for user in users:
-            if not pd.isnull(user) and 'nan' not in user:
+            if not pd.isnull(user) and user not in ['nan', '']:
                 q.put(('users', user, '', row['name'], ap('meta'), 5))
     q.join()
 
@@ -225,7 +223,12 @@ if __name__ == "__main__":
             download_vines(data)
             update_records(data, ap('cache/' + arg + '.csv'))
         elif opt == '--update':
-            scrape_all(int(arg))
+            try:
+                int(arg)
+                scrape_all(int(arg))
+            except ValueError as e:
+                print(e)
+                print('I need a number to set the max page limit')
         elif opt == '-u':
             scrape_all(-1)
         elif opt == '--upload':
