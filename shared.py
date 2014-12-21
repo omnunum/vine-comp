@@ -62,6 +62,16 @@ def delete_file(path):
         print(e)
 
 
+def load_top_100(name):
+    path = ap('meta/' + name + '.csv')
+    if osp.isfile(path):
+        try:
+            df = pd.read_csv(path, encoding='utf-8')
+            return df.ix[:100, :]
+        except Exception as e:
+            print(e)
+
+
 #gets rid of all files in the render and cache directories as well as
 #the vine records csv and leftover temp mp3 audio clips
 def flush_all():

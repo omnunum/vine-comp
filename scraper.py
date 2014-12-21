@@ -109,16 +109,6 @@ class ThreadDLVines(Thread):
             self.q.task_done()
 
 
-def load_top_100(name):
-    path = ap('meta/' + name + '.csv')
-    if osp.isfile(path):
-        try:
-            df = pd.read_csv(path, encoding='utf-8')
-            return df.ix[:100, :]
-        except Exception as e:
-            print(e)
-
-
 def update_records(data, abs_path):
     #gets pathfile passed in before thread started
     filename = abs_path

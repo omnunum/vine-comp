@@ -75,6 +75,7 @@ def concat_vines(data, name):
     write_x264(concat, group_render_path(name))
 
 if __name__ == '__main__':
-    data = pd.read_csv(ap('meta/worldstarhiphop.csv'), encoding='utf-8')
+    name = 'worldstarhiphop'
+    data = load_top_100(name)
     render_vines(data)
-    concat_vines(data, 'worldstarhiphop')
+    concat_vines(data, name)
