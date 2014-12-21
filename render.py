@@ -44,14 +44,15 @@ def render_vines(data):
     datavrid = list(exists(data, 'render')['id'].astype(basestring))
     q = Queue()
     thread_pool(q, 3, ThreadWritex264)
-    for i, vineid in enumerate(datav['id'].astype(basestring)):
-        if vineid not in datavrid:
+    for i, row in datav.iterrows():
+        if row['id'] not in datavrid:
+            vineid = row['id']
             vine = vfc_from_file(vineid, 'cache').on_color(size=(854, 480),
                                                            color=(20, 20, 25),
                                                            pos='center')
             #encodes text as ascii for textclip creation
-            user = enco_str(data['username'][i])
-            desc = enco_str(data['description'][i])
+            user = enc_str(row['username'])
+            desc = enc_str(row['description'])
             user = 'Vine By:\n' + user
             #lambda to create text clip
             tc = lambda text, size, xline: (mpe.TextClip(txt=text, size=(180, 480),

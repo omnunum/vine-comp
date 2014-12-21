@@ -23,7 +23,9 @@ def thread_pool(q, maxthreads, ThreadClass):
 #converts utf-8 strings to ascii by dropping invalid characters
 def enc_str(x):
     if isinstance(x, unicode):
-        normalize('NFKD', x).encode('ascii', 'ignore')
+        return normalize('NFKD', x).encode('ascii', 'ignore')
+    else:
+        return str(x)
 
 
 #sorts the rows by the loop count, drop duplicates, and resets the index
