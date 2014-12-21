@@ -58,7 +58,7 @@ def render_vines(data):
             print('skipping ' + vineid)
 
 
-def concat_vines(data):
+def concat_groups(data):
     datavid = exists(data, 'render')['id']
     groups = group_data(datavid, 20)
     if not osp.isdir(ap('render/groups')):
@@ -73,6 +73,15 @@ def concat_vines(data):
     videos = [vfcg(groupid) for groupid in range(len(groups))]
     concat = mpe.concatenate_videoclips(videos)
     write_x264(concat, group_render_path("FINAL RENDER"))
+
+
+def concat_vines(data, name):
+    datavid = exists(data, 'render')['id']
+    videos = [vfc_from_file(vid, 'render') for vid in datavid]
+    concat = mpe.concatenate_videoclips(videos)
+    if not osp.isdir(ap('render/finals')):
+        os.makedirs('render/finals')
+    write_x264(concat, ap('render/finals/' + name + '.mp4'))
 
 
 if __name__ == '__main__':
