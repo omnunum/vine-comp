@@ -20,6 +20,12 @@ from datetime import datetime as dt
 
 
 def scrape(pagelim, endpoint, term=''):
+    """Retrieves all pages of the specified URL format up to the page limit.
+    Most of this code is spent on the loop structure to make sure we can
+    automatically get all the pages needed without storing empty data.
+    The latter half of this function is dedicated to making sure all the data
+    we need is typecasted correctly.
+    """
     comp = pd.DataFrame()
     success = True
     page = 0
@@ -45,9 +51,11 @@ def scrape(pagelim, endpoint, term=''):
                 #else add current page to the comp
                 else:
                     comp = pd.concat([df, comp], ignore_index=True)
+                #a pagelim of -1 means grab all the pages available/no limit
                 if page < pagelim or pagelim == -1:
                     page += 1
                 else:
+                    print('Finished scraping at: ' + url)
                     success = False
             else:
                 print('Finished scraping at: ' + url)
@@ -60,12 +68,13 @@ def scrape(pagelim, endpoint, term=''):
         loops = comp['loops'].apply(lambda x: pd.Series(x))
         unstacked = loops.unstack().unstack().T[['count', 'velocity']]
         #takes the columns we need
-        subset = comp[['videoUrl', 'permalinkUrl', 'username']].astype(basestring).copy()
-        #adds the new columns to the previous page composite
+        subset = comp[['videoUrl', 'permalinkUrl', 'username', 'created']].astype(basestring).copy()
+        #adds the new columns to the previous page(s) composite
+        subset['created'] = comp['created']
         subset['count'] = unstacked['count'].astype(int)
         subset['velocity'] = unstacked['velocity'].astype(float)
         subset['description'] = comp['description'].astype(basestring).map(enc_str)
-        #extracts the vineid from the permalink
+        #extracts the vineid from the right side of the permalink
         get_id = lambda x: x.rsplit('/', 1)[-1]
         subset['id'] = [get_id(perma) for perma in subset['permalinkUrl']]
         sort = sort_clean(subset)
@@ -78,10 +87,11 @@ def download_vines(data):
     q = Queue()
     dir_path = ap('')
     thread_pool(q, 5, ThreadDLVines)
-    
+
     for i, row in data.iterrows():
         q.put((row, dir_path))
     q.join()
+
     
 class ThreadDLVines(Thread):
 
@@ -194,10 +204,10 @@ def scrape_all(pagelim):
         users = str(row['users']).split(' ')
         for tag in tags:
             if not pd.isnull(tag) and tag not in ['nan', '']:
-                q.put(('tags', tag, '', row['name'], ap('meta'), 5))
+                q.put(('tags', tag, '', row['name'], ap('meta'), pagelim))
         for user in users:
             if not pd.isnull(user) and user not in ['nan', '']:
-                q.put(('users', user, '', row['name'], ap('meta'), 5))
+                q.put(('users', user, '', row['name'], ap('meta'), pagelim))
     q.join()
 
 

@@ -5,7 +5,6 @@ Created on Thu Dec 11 14:36:33 2014
 @author: sunshine
 """
 
-import pandas as pd
 from shared import *
 from moviepy import editor as mpe
 import os
@@ -59,23 +58,29 @@ def render_vines(data):
 
 
 def concat_vines(data, name):
+    #gets all the vine ids, returns those are have been rendered with titles
     datavid = exists(data, 'render')['id']
+    #makes groups of vineids with a size of 50 elements
     groups = group_data(datavid, 50)
+    #makes the groups folder if doesn't exist
     if not osp.isdir(ap('render/groups')):
         os.makedirs('render/groups')
-    #lambda to get VideoFileClip from group number
-    vfcg = lambda group: vfc_from_file('group_' + str(group), 'render/groups')
     group_render_path = lambda f: ap('render/groups/' + f + '.mp4')
     for i, group in enumerate(groups):
         videos = [vfc_from_file(vineid, 'render') for vineid in group]
         concat = mpe.concatenate_videoclips(videos)
-        write_x264(concat, group_render_path('group_' + str(i)))
-    videos = [vfcg(groupid) for groupid in range(len(groups))]
-    concat = mpe.concatenate_videoclips(videos)
+        write_x264(concat, group_render_path(name + '_group_' + str(i)))
+    #lambda to create VideoFileClip from group number
+    vfcg = lambda group: vfc_from_file('group_' + str(group), 'render/groups')
+    #creates list of video file clips from the group files
+    video_groups = [vfcg(groupid) for groupid in range(len(groups))]
+    #concatenates all the groups into one video
+    concat = mpe.concatenate_videoclips(video_groups)
+    #writes that final file to disk
     write_x264(concat, group_render_path(name))
 
 if __name__ == '__main__':
-    name = 'worldstarhiphop'
+    name = 'comedy'
     data = load_top_100(name)
     render_vines(data)
     concat_vines(data, name)

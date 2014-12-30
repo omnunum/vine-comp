@@ -67,7 +67,7 @@ def load_top_100(name):
     if osp.isfile(path):
         try:
             df = pd.read_csv(path, encoding='utf-8')
-            return df.ix[:100, :]
+            return sort_clean(df).ix[:100, :]
         except Exception as e:
             print(e)
 
@@ -78,6 +78,7 @@ def flush_all():
     for directory in ['render/', 'render/groups/', 'cache/', 'meta/']:
         for vfile in os.listdir(ap(directory)):
             if not re.match('playlists.csv', vfile):
+                print('removing all files in: ' + directory)
                 delete_file(directory + vfile)
     for vfile in os.listdir(ap('')):
         if vfile.endswith('.mp3'):
