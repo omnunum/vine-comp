@@ -11,6 +11,7 @@ import os
 from os import path as osp
 import numpy as np
 import re
+import pandas as pd
 
 
 def vfc_from_file(filename, directory):
@@ -33,6 +34,8 @@ def render_vines(data, channel):
     datav = exists(data, 'cache')
     #files already rendered get skipped
     datavrid = list(exists(data, 'render')['id'].astype(basestring))
+    #adds data so that the order of the videos can be printed on screen
+    datav['order'] = datav.index.values
     for i, row in datav.iterrows():
         row = row.replace(np.nan, '', regex=True)
         vineid = row['id']
@@ -51,13 +54,26 @@ def render_vines(data, channel):
                                             method='caption', align='center',
                                             font='Heroic-Condensed-Bold', fontsize=size,
                                             color='white', interline=xline)
-                                    .set_duration(vine.duration))
-            user_osd = tc(user, 55, 11)
-            desc_osd = tc(desc, 40, 0).set_pos('right')
-            channel_icon = mpe.ImageClip(ap('meta/icons/' + channel + '.png'), transparent=True)
-            channel_icon = channel_icon.set_pos((20, 10)).set_duration(vine.duration)
-            #composite the text on the sides of the video
-            comp = mpe.CompositeVideoClip([vine, user_osd, desc_osd, channel_icon])
+                                            .set_duration(vine.duration))
+            user_osd = tc(user, 55, 11).set_position((0, 25))
+            desc_osd = tc(desc, 40, 0).set_position('right')
+
+            channel_icon_path = ap('meta/icons/' + channel + '.png')
+            channel_icon_size = (120, 120)
+            channel_icon = mpe.ImageClip(str(channel_icon_path), transparent=True)
+            channel_icon = (channel_icon.set_duration(vine.duration)
+                                        .resize(channel_icon_size)
+                                        .set_position((0, 5)))
+            #order number
+            order = (mpe.TextClip(txt=str(row['order']), 
+                     size=channel_icon_size,
+                     font='Heroic-Condensed-Bold', fontsize=100,
+                     align='east', color='red')
+                     .set_position((62, 15))
+                     .set_duration(vine.duration))
+            #composite the parts on the sides of the video
+            comp = mpe.CompositeVideoClip([vine, user_osd, desc_osd,
+                                           channel_icon, order])
             #start the render
             path = ap('render/' + vineid + '.mp4')
             write_x264(comp, path)
