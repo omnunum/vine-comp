@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Generator: Adobe Illustrator 16.0.4, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="96px" height="96px" viewBox="0 0 96 96" enable-background="new 0 0 96 96" xml:space="preserve">
+<g>
+	<g>
+		<path fill="#FFFFFF" d="M16,60v12c0,5,3,8,8,8h16c5,0,8-3,8-8V60H16z"/>
+		<rect x="26" y="16" fill="#2F7DE1" width="12" height="4"/>
+		<path fill="#2F7DE1" d="M16,44v2c0,2.586,0.715,4.623,2,6c-1.285,1.377-2,3.414-2,6v2h32V44H16z"/>
+		<path fill="#FFFFFF" d="M16,44c0-12,10-12,10-20.145V20h12v3.855C38,32,48,32,48,44"/>
+		<rect x="26" y="16" fill="#2A74C6" width="6" height="4"/>
+		<path fill="#F1F1EC" d="M26,20v3.855C26,32,16,32,16,44h16V20H26z"/>
+		<path fill="#F1F1EC" d="M16,60v12c0,5,3,8,8,8h8V60H16z"/>
+		<path fill="#2A74C6" d="M16,44v2c0,2.586,0.715,4.623,2,6c-1.285,1.377-2,3.414-2,6v2h16V44H16z"/>
+		<path fill="#60B299" d="M28.605,51.635C28.211,52.266,28,53.062,28,54c0,2.5,1.5,4,4,4V46L28.605,51.635z"/>
+		<g>
+			<g>
+				<g>
+					<path fill="#FF495C" d="M72,44H61.999v32.001L62,76l5.637,3.395C68.266,79.789,69.062,80,70,80       c2.033,0,3.404-0.992,3.846-2.707l5.848-22.707C79.896,53.799,80,52.934,80,52C80,47,77,44,72,44z"/>
+					<path fill="#E5425A" d="M62,76l-5.637,3.395C55.734,79.789,54.938,80,54,80c-2.033,0-3.404-0.992-3.846-2.707l-5.847-22.707       C44.104,53.799,44,52.934,44,52c0-5,3-8,8-8h10V76z"/>
+					<path fill="#873A34" d="M62,36c-1.25,0-2,0.75-2,2v6h4v-6C64,36.75,63.25,36,62,36z"/>
+					<path fill="#00A67C" d="M72,36c-3.75,0-6,2.25-6,6h6c3.75,0,6-2.25,6-6H72z"/>
+				</g>
+				<g>
+					<g>
+						<g>
+							<g>
+								<path fill="#FFFFFF" d="M72,50c-1.25,0-2,0.75-2,2s0.75,2,2,2s2-0.75,2-2S73.25,50,72,50z"/>
+							</g>
+						</g>
+					</g>
+				</g>
+			</g>
+		</g>
+	</g>
+	<path fill="#6ECDB2" d="M32,58c2.5,0,4-1.5,4-4c0-0.938-0.211-1.734-0.605-2.365L32,46"/>
+</g>
+</svg>

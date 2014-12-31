@@ -9,15 +9,18 @@ from shared import *
 from moviepy import editor as mpe
 import os
 from os import path as osp
+import numpy as np
+import re
 
 
 def vfc_from_file(filename, directory):
     path = ap(str(directory) + '/' + str(filename) + '.mp4')
-    try:
-        video = mpe.VideoFileClip(path)
-        return video
-    except Exception as e:
-        print(e)
+    if osp.isfile(path):
+        try:
+            video = mpe.VideoFileClip(path)
+            return video
+        except Exception as e:
+            print(e)
 
 
 def write_x264(vfc, path):
@@ -25,12 +28,13 @@ def write_x264(vfc, path):
                         threads=4, verbose=True, fps=30)
 
 
-def render_vines(data):
+def render_vines(data, channel):
     #verify files exist in cache folder
     datav = exists(data, 'cache')
     #files already rendered get skipped
     datavrid = list(exists(data, 'render')['id'].astype(basestring))
     for i, row in datav.iterrows():
+        row = row.replace(np.nan, '', regex=True)
         vineid = row['id']
         if vineid not in datavrid:
             vine = vfc_from_file(vineid, 'cache').on_color(size=(854, 480),
@@ -39,17 +43,21 @@ def render_vines(data):
             #encodes text as ascii for textclip creation
             user = enc_str(row['username']).upper()
             desc = enc_str(row['description']).upper()
+            desc = re.sub(' #[a-zA-Z0-9]+', '', desc)
+            
             user = 'VINE BY:\n' + user
             #lambda to create text clip
             tc = lambda text, size, xline: (mpe.TextClip(txt=text, size=(180, 480),
                                             method='caption', align='center',
-                                            font='arial', fontsize=size,
+                                            font='Heroic-Condensed-Bold', fontsize=size,
                                             color='white', interline=xline)
                                     .set_duration(vine.duration))
-            user_osd = tc(user, 40, 20)
-            desc_osd = tc(desc, 28, 13).set_pos('right')
+            user_osd = tc(user, 55, 11)
+            desc_osd = tc(desc, 40, 0).set_pos('right')
+            channel_icon = mpe.ImageClip(ap('meta/icons/' + channel + '.png'), transparent=True)
+            channel_icon = channel_icon.set_pos((20, 10)).set_duration(vine.duration)
             #composite the text on the sides of the video
-            comp = mpe.CompositeVideoClip([vine, user_osd, desc_osd])
+            comp = mpe.CompositeVideoClip([vine, user_osd, desc_osd, channel_icon])
             #start the render
             path = ap('render/' + vineid + '.mp4')
             write_x264(comp, path)
@@ -82,5 +90,5 @@ def concat_vines(data, name):
 if __name__ == '__main__':
     name = 'comedy'
     data = load_top_100(name)
-    render_vines(data)
+    render_vines(data, name)
     concat_vines(data, name)
