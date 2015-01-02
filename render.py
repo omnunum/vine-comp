@@ -64,13 +64,13 @@ def render_vines(data, channel):
             desc_osd = tc(desc, 40, 0).set_position('right')
 
             channel_icon_path = ap('meta/icons/' + channel + '.png')
-            channel_icon_size = (120, 120)
+            channel_icon_size = (118, 118)
             channel_icon = mpe.ImageClip(str(channel_icon_path), transparent=True)
             channel_icon = (channel_icon.set_duration(vine.duration)
                                         .resize(channel_icon_size)
                                         .set_position((0, 5)))
             #order number
-            order = (mpe.TextClip(txt=str(row['order']), 
+            order = (mpe.TextClip(txt=str(row['order'] + 1), 
                      size=channel_icon_size,
                      font='Heroic-Condensed-Bold', fontsize=100,
                      align='east', color='red')
@@ -79,14 +79,14 @@ def render_vines(data, channel):
             #grabs a random second from our static video sourced from
             #http://www.videezy.com/elements-and-effects/242-tv-static-hd-stock-video
             static_v = vfc_from_file('static', '').resize(vine.size)
-            randsec = random.randint(0, int(static_v.duration) - 1)
+            randsec = random.randint(0, int(static_v.duration) - 2)
             static_v = static_v.subclip(randsec, randsec + 1)
             #grab the audio for the static and set it to the video
-            static_a = mpe.AudioFileClip(ap('static.wav')).volumex(0.5)
+            static_a = mpe.AudioFileClip(ap('static.wav')).volumex(0.4)
             static = static_v.set_audio(static_a)
             
             #composite the parts on the sides of the video
-            #then concatenate the static intercut
+            #then concatenate with the static intercut
             comp = mpe.CompositeVideoClip([vine, user_osd, desc_osd,
                                            channel_icon, order])
             comp = mpe.concatenate_videoclips([comp, static])
@@ -122,6 +122,6 @@ def concat_vines(data, name):
 
 if __name__ == '__main__':
     name = 'comedy'
-    data = load_top_n(10, name)
+    data = load_top_n(5, name)
     render_vines(data, name)
     concat_vines(data, name)
