@@ -95,7 +95,7 @@ def concat_vines(data, name):
         concat = mpe.concatenate_videoclips(videos)
         write_x264(concat, group_render_path(name + '_group_' + str(i)))
     #lambda to create VideoFileClip from group number
-    vfcg = lambda group: vfc_from_file('group_' + str(group), 'render/groups')
+    vfcg = lambda group: vfc_from_file(name + '_group_' + str(group), 'render/groups')
     #creates list of video file clips from the group files
     video_groups = [vfcg(groupid) for groupid in range(len(groups))]
     #concatenates all the groups into one video
