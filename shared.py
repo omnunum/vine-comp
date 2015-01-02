@@ -62,12 +62,12 @@ def delete_file(path):
         print(e)
 
 
-def load_top_100(name):
+def load_top_n(n, name):
     path = ap('meta/' + name + '.csv')
     if osp.isfile(path):
         try:
             df = pd.read_csv(path, encoding='utf-8')
-            return sort_clean(df).ix[:100, :]
+            return sort_clean(df).ix[:n, :]
         except Exception as e:
             print(e)
 
@@ -76,15 +76,20 @@ def load_top_100(name):
 #the vine records csv and leftover temp mp3 audio clips
 def flush_all():
     for directory in ['render/', 'render/groups/', 'cache/', 'meta/']:
+        print('removing all files in: ' + directory)
         for vfile in os.listdir(ap(directory)):
             if not re.match('playlists.csv', vfile):
-                print('removing all files in: ' + directory)
                 delete_file(directory + vfile)
     for vfile in os.listdir(ap('')):
         if vfile.endswith('.mp3'):
             print('removing: ' + vfile)
             delete_file(vfile)
-
+            
+def flush_render():
+    for directory in ['render/', 'render/groups/']:
+        print('removing all files in: ' + directory)
+        for vfile in os.listdir(ap(directory)):
+            delete_file(directory + vfile)
 
 def group_data(data, group_size):
     return [data[x:x+group_size] for x in range(0, len(data), group_size)]

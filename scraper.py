@@ -212,14 +212,17 @@ def scrape_all(pagelim):
 
 
 if __name__ == "__main__":
-    options, remainder = getopt.gnu_getopt(sys.argv[1:], ':uf',
-                                           ['download=', 'flush',
+    options, remainder = getopt.gnu_getopt(sys.argv[1:], ':u',
+                                           ['download=', 'flush=',
                                             'update=', 'upload'])
     for opt, arg in options:
-        if opt in ['--flush', '-f']:
-            flush_all()
+        if opt == '--flush':
+            if arg == 'render':
+                flush_render()
+            else:    
+                flush_all()
         elif opt == '--download':
-            data = load_top_100(arg)
+            data = load_top_n(100, arg)
             download_vines(data)
             update_records(data, ap('cache/' + arg + '.csv'))
         elif opt == '--update':

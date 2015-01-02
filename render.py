@@ -12,10 +12,15 @@ from os import path as osp
 import numpy as np
 import re
 import pandas as pd
+import random
 
 
 def vfc_from_file(filename, directory):
-    path = ap(str(directory) + '/' + str(filename) + '.mp4')
+    path = str
+    if directory == '':
+        path = ap(str(filename) + '.mp4')
+    else:
+        path = ap(str(directory) + '/' + str(filename) + '.mp4')
     if osp.isfile(path):
         try:
             video = mpe.VideoFileClip(path)
@@ -71,9 +76,21 @@ def render_vines(data, channel):
                      align='east', color='red')
                      .set_position((62, 15))
                      .set_duration(vine.duration))
+            #grabs a random second from our static video sourced from
+            #http://www.videezy.com/elements-and-effects/242-tv-static-hd-stock-video
+            static_v = vfc_from_file('static', '').resize(vine.size)
+            randsec = random.randint(0, int(static_v.duration) - 1)
+            static_v = static_v.subclip(randsec, randsec + 1)
+            #grab the audio for the static and set it to the video
+            static_a = mpe.AudioFileClip(ap('static.wav')).volumex(0.5)
+            static = static_v.set_audio(static_a)
+            
             #composite the parts on the sides of the video
+            #then concatenate the static intercut
             comp = mpe.CompositeVideoClip([vine, user_osd, desc_osd,
                                            channel_icon, order])
+            comp = mpe.concatenate_videoclips([comp, static])
+                                           
             #start the render
             path = ap('render/' + vineid + '.mp4')
             write_x264(comp, path)
@@ -105,6 +122,6 @@ def concat_vines(data, name):
 
 if __name__ == '__main__':
     name = 'comedy'
-    data = load_top_100(name)
+    data = load_top_n(10, name)
     render_vines(data, name)
     concat_vines(data, name)
