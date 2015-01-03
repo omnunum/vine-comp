@@ -144,12 +144,13 @@ def write_description(data, name):
     with open(path, 'w+') as f:
         for i, row in datav.iterrows():
             desc = enc_str(row['description'])[:50]
+            user = enc_str(row['username'])
             line = ('{0}: {1} - {2} -- {3}\n'
-                    .format(i + 1, row['username'], desc, row['permalinkUrl']))
+                    .format(i + 1, user, desc, row['permalinkUrl']))
             f.write(enc_str(line))
     return path
 
-           
+
 if __name__ == '__main__':
     options, remainder = getopt.gnu_getopt(sys.argv[1:], ':',
                                            ['name=', 'limit='])
@@ -164,5 +165,9 @@ if __name__ == '__main__':
     render_vines(data, name)
     path = concat_vines(data, name)
     desc_path = write_description(data, name)
-    upload_video(path, desc_path)
-    flush_render()
+    try:
+        upload_video(path, desc_path)
+        flush_render()
+    except Exception as e:
+        print('Error with upload script, not flushing render folder')
+        print(e)
