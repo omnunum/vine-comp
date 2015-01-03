@@ -134,6 +134,9 @@ def concat_vines(data, name):
 
 
 def write_description(data, name):
+    #creates the directory if we need it to
+    if not osp.isdir(ap('meta/descriptions')):
+        os.makedirs(ap('meta/descriptions'))
     #confirms that the files were rendered
     datav = exists(data, 'render')
     path = ap('meta/descriptions/' + name + '.txt')

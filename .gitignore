@@ -4,6 +4,7 @@ render/groups/*
 render/finals/*
 meta/*.csv
 !meta/playlists.csv
+meta/descriptions/*
 *.py[cod]
 ~lock*#
 *~
