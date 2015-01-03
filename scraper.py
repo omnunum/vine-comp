@@ -9,13 +9,12 @@ import pandas as pd
 import numpy as np
 import os.path as osp
 import sys
+import getopt
 from lxml import html
 import requests as rq
-import subprocess
 from shared import *
 from threading import Thread
 from Queue import Queue
-import getopt
 from datetime import datetime as dt
 
 
@@ -132,19 +131,6 @@ def update_records(data, abs_path):
         data.to_csv(filename, index=False, encoding='utf-8')
 
 
-def upload_video(path):
-    if osp.isfile(path):
-        args = (['python2', ap('youtube_upload.py'),
-                '--email=vinecompauthority@gmail.com',
-                '--password=4u7H0r17Y',
-                '--title=Hottest Vines of The Week 12-14-14',
-                '--category=Comedy',
-                path])
-        subprocess.call(args)
-    else:
-        print('File not found: ' + path)
-
-
 def get_trending_tags():
     #grabs the static html page data
     explore_page = rq.get('https://vine.co/explore')
@@ -235,4 +221,4 @@ if __name__ == "__main__":
         elif opt == '-u':
             scrape_all(-1)
         elif opt == '--upload':
-            upload_video(ap('render/groups/FINAL RENDER.mp4'))
+            pass

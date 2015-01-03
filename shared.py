@@ -9,6 +9,7 @@ import os.path as osp
 import sys
 import pandas as pd
 import re
+import subprocess
 from unicodedata import normalize
 
 
@@ -67,15 +68,30 @@ def load_top_n(n, name):
     if osp.isfile(path):
         try:
             df = pd.read_csv(path, encoding='utf-8')
-            return sort_clean(df).ix[:n, :]
+            return sort_clean(df).ix[:n - 1, :]
         except Exception as e:
             print(e)
+
+
+def upload_video(path, desc_path):
+    if osp.isfile(path):
+        args = (['python2', ap('youtube_upload.py'),
+                '--email=vinecompauthority@gmail.com',
+                '--password=4u7H0r17Y',
+                '--title=Hottest Vines of The Week 12-14-14',
+                '--category=Comedy',
+                '--description="$(<' + desc_path + ')"',
+                path])
+        subprocess.call(args)
+    else:
+        print('File not found: ' + path)
 
 
 #gets rid of all files in the render and cache directories as well as
 #the vine records csv and leftover temp mp3 audio clips
 def flush_all():
-    for directory in ['render/', 'render/groups/', 'cache/', 'meta/']:
+    directories = ['render/', 'render/groups/', 'cache/', 'meta/']
+    for directory in directories:
         print('removing all files in: ' + directory)
         for vfile in os.listdir(ap(directory)):
             if not re.match('playlists.csv', vfile):
@@ -84,12 +100,14 @@ def flush_all():
         if vfile.endswith('.mp3'):
             print('removing: ' + vfile)
             delete_file(vfile)
-            
+
+
 def flush_render():
     for directory in ['render/', 'render/groups/']:
         print('removing all files in: ' + directory)
         for vfile in os.listdir(ap(directory)):
             delete_file(directory + vfile)
+
 
 def group_data(data, group_size):
     return [data[x:x+group_size] for x in range(0, len(data), group_size)]

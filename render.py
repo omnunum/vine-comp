@@ -9,6 +9,8 @@ from shared import *
 from moviepy import editor as mpe
 import os
 from os import path as osp
+import sys
+import getopt
 import numpy as np
 import re
 import pandas as pd
@@ -42,6 +44,7 @@ def render_vines(data, channel):
     #adds data so that the order of the videos can be printed on screen
     datav['order'] = datav.index.values
     for i, row in datav.iterrows():
+        #replaces all instances of NaN with a blank string
         row = row.replace(np.nan, '', regex=True)
         vineid = row['id']
         if vineid not in datavrid:
@@ -51,9 +54,9 @@ def render_vines(data, channel):
             #encodes text as ascii for textclip creation
             user = enc_str(row['username']).upper()
             desc = enc_str(row['description']).upper()
-            desc = re.sub(' #[a-zA-Z0-9]+', '', desc)
-            
+            desc = re.sub(' #[a-zA-Z0-9]+', '', desc)       
             user = 'VINE BY:\n' + user
+
             #lambda to create text clip
             tc = lambda text, size, xline: (mpe.TextClip(txt=text, size=(180, 480),
                                             method='caption', align='center',
@@ -101,16 +104,21 @@ def render_vines(data, channel):
 def concat_vines(data, name):
     #gets all the vine ids, returns those are have been rendered with titles
     datavid = exists(data, 'render')['id']
-    #makes groups of vineids with a size of 50 elements
-    groups = group_data(datavid, 50)
+    #makes groups of vineids with a size of 51 elements
+    groups = group_data(datavid, 51)
     #makes the groups folder if doesn't exist
     if not osp.isdir(ap('render/groups')):
         os.makedirs('render/groups')
-    group_render_path = lambda f: ap('render/groups/' + f + '.mp4')
+    #we have to batch this process in groups otherwise the amount of files
+    #open at once can quickly cause the user to hit a memory excession.
+    #however, if you happen to have around >6-8GB of memory you should be
+    #able to do an entire batch of 100 at once and save on the time it takes
+    #to encode all the vines twice
     for i, group in enumerate(groups):
+        group_render_path = ap('render/groups/' + name + '_group_' + str(i) + '.mp4')
         videos = [vfc_from_file(vineid, 'render') for vineid in group]
         concat = mpe.concatenate_videoclips(videos)
-        write_x264(concat, group_render_path(name + '_group_' + str(i)))
+        write_x264(concat, group_render_path)
     #lambda to create VideoFileClip from group number
     vfcg = lambda group: vfc_from_file(name + '_group_' + str(group), 'render/groups')
     #creates list of video file clips from the group files
@@ -118,10 +126,40 @@ def concat_vines(data, name):
     #concatenates all the groups into one video
     concat = mpe.concatenate_videoclips(video_groups)
     #writes that final file to disk
-    write_x264(concat, group_render_path(name))
+    if not osp.isdir(ap('render/finals')):
+        os.makedirs(ap('render/finals'))
+    final_render_path = ap('render/finals/' + name + '.mp4')
+    write_x264(concat, final_render_path)
+    return group_render_path
 
+
+def write_description(data, name):
+    #confirms that the files were rendered
+    datav = exists(data, 'render')
+    path = ap('meta/descriptions/' + name + '.txt')
+
+    with open(path, 'w+') as f:
+        for i, row in datav.iterrows():
+            desc = enc_str(row['description'])[:50]
+            line = ('{0}: {1} - {2} -- {3}\n'
+                    .format(i + 1, row['username'], desc, row['permalinkUrl']))
+            f.write(enc_str(line))
+    return path
+
+           
 if __name__ == '__main__':
-    name = 'comedy'
-    data = load_top_n(5, name)
+    options, remainder = getopt.gnu_getopt(sys.argv[1:], ':',
+                                           ['name=', 'limit='])
+    name, n = 'comedy', 10
+    for opt, arg in options:
+        if opt == '--name':
+            name = arg
+        if opt == '--limit':
+            n = int(arg)
+
+    data = load_top_n(n, name)
     render_vines(data, name)
-    concat_vines(data, name)
+    path = concat_vines(data, name)
+    desc_path = write_description(data, name)
+    upload_video(path, desc_path)
+    flush_render()
