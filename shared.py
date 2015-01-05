@@ -76,7 +76,7 @@ def load_top_n(n, name):
 #gets rid of all files in the render and cache directories as well as
 #the vine records csv and leftover temp mp3 audio clips
 def flush_all():
-    directories = ['render/', 'render/groups/', 'cache/', 'meta/']
+    directories = ['render/', 'cache/', 'meta/']
     for directory in directories:
         print('removing all files in: ' + directory)
         for vfile in os.listdir(ap(directory)):
@@ -89,7 +89,7 @@ def flush_all():
 
 
 def flush_render():
-    for directory in ['render/', 'render/groups/']:
+    for directory in ['render/', 'render/finals/']:
         print('removing all files in: ' + directory)
         for vfile in os.listdir(ap(directory)):
             delete_file(directory + vfile)

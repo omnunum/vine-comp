@@ -1,6 +1,5 @@
 cache/*
 render/*
-render/groups/*
 render/finals/*
 meta/*.csv
 !meta/playlists.csv

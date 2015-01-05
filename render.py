@@ -104,34 +104,25 @@ def render_vines(data, channel):
 def concat_vines(data, name):
     #gets all the vine ids, returns those are have been rendered with titles
     datavid = exists(data, 'render')['id']
-    #makes groups of vineids with a size of 51 elements
-    groups = group_data(datavid, 51)
-    #makes the groups folder if doesn't exist
-    if not osp.isdir(ap('render/groups')):
-        os.makedirs('render/groups')
-    #we have to batch this process in groups otherwise the amount of files
-    #open at once can quickly cause the user to hit a memory excession.
-    #however, if you happen to have around >6-8GB of memory you should be
-    #able to do an entire batch of 100 at once and save on the time it takes
-    #to encode all the vines twice
-    for i, group in enumerate(groups):
-        group_render_path = ap('render/groups/' + name + '_group_' + str(i) + '.mp4')
-        videos = [vfc_from_file(vineid, 'render') for vineid in group]
-        concat = mpe.concatenate_videoclips(videos)
-        write_x264(concat, group_render_path)
-    #lambda to create VideoFileClip from group number
-    vfcg = lambda group: vfc_from_file(name + '_group_' + str(group), 'render/groups')
-    #creates list of video file clips from the group files
-    video_groups = [vfcg(groupid) for groupid in range(len(groups))]
-    #concatenates all the groups into one video
-    concat = mpe.concatenate_videoclips(video_groups)
-    #writes that final file to disk
+    #sets up the paths we'll need
+    vine_list_path = ap('render/' + name + '.txt')
+    final_path = ap('render/finals/' + name + '.mp4')
+    #makes the necessary folders if doesn't exist
     if not osp.isdir(ap('render/finals')):
         os.makedirs(ap('render/finals'))
-    final_render_path = ap('render/finals/' + name + '.mp4')
-    write_x264(concat, final_render_path)
-    return final_render_path
-
+    else:
+        #if an old copy already exists let's delete it
+        if osp.isfile(final_path):
+            os.unlink(final_path)
+    
+    with open(vine_list_path, 'w+') as l:
+        for vineid in datavid:
+            path = ap('render/' + vineid + '.mp4')
+            l.write('file \'' + path + '\'\n')
+    args = (['ffmpeg', '-f', 'concat', '-i', vine_list_path,
+             '-c', 'copy', final_path])
+    subprocess.call(args)
+    return final_path
 
 def create_comp_description(data):
     #confirms that the files were rendered
@@ -139,7 +130,7 @@ def create_comp_description(data):
     comp_desc = list()
 
     for i, row in datav.iterrows():
-        desc = enc_str(row['description'])[:50]
+        desc = enc_str(row['description'])[:70]
         user = enc_str(row['username'])
         line = ('{0}: {1} - {2} -- {3}'
                 .format(i + 1, user, desc, row['permalinkUrl']))
@@ -153,7 +144,7 @@ def upload_video(path, desc_path, name):
                  '--api-upload',
                 '--email=vinecompauthority@gmail.com',
                 '--password=yvngqhuxhjynsyfq',
-                '--title="Hottest ' + name.title() + ' Vines of The Week"',
+                '--title=Hottest ' + name.title() + ' Vines of The Week',
                 '--category=Comedy',
                 '--description=' + desc,
                 path])
@@ -177,8 +168,10 @@ if __name__ == '__main__':
     path = concat_vines(data, name)
     desc = create_comp_description(data)
     try:
-        upload_video(path, desc, name)
-        flush_render()
+        if osp.isfile(path):
+            upload_video(path, desc, name)
+        else:
+            print('Final ' + name + ' render file not found')
     except Exception as e:
         print('Error with upload script, not flushing render folder')
         print(e)
