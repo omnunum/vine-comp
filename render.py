@@ -169,7 +169,7 @@ if __name__ == '__main__':
 
     data = load_top_n(n, name)
     render_vines(data, name)
-    #path = concat_vines(data, name)
+    path = concat_vines(data, name)
     desc = create_comp_description(data)
     try:
         if osp.isfile(path):
