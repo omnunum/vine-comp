@@ -73,20 +73,6 @@ def load_top_n(n, name):
             print(e)
 
 
-def upload_video(path, desc_path):
-    if osp.isfile(path):
-        args = (['python2', ap('youtube_upload.py'),
-                '--email=vinecompauthority@gmail.com',
-                '--password=4u7H0r17Y',
-                '--title=Hottest Vines of The Week 12-14-14',
-                '--category=Comedy',
-                '--description="$(<' + desc_path + ')"',
-                path])
-        subprocess.call(args)
-    else:
-        print('File not found: ' + path)
-
-
 #gets rid of all files in the render and cache directories as well as
 #the vine records csv and leftover temp mp3 audio clips
 def flush_all():

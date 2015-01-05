@@ -200,7 +200,7 @@ def scrape_all(pagelim):
 if __name__ == "__main__":
     options, remainder = getopt.gnu_getopt(sys.argv[1:], ':u',
                                            ['download=', 'flush=',
-                                            'update=', 'upload'])
+                                            'update='])
     for opt, arg in options:
         if opt == '--flush':
             if arg == 'render':
@@ -220,5 +220,3 @@ if __name__ == "__main__":
                 print('I need a number to set the max page limit')
         elif opt == '-u':
             scrape_all(-1)
-        elif opt == '--upload':
-            pass

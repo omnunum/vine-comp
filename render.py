@@ -130,25 +130,36 @@ def concat_vines(data, name):
         os.makedirs(ap('render/finals'))
     final_render_path = ap('render/finals/' + name + '.mp4')
     write_x264(concat, final_render_path)
-    return group_render_path
+    return final_render_path
 
 
-def write_description(data, name):
-    #creates the directory if we need it to
-    if not osp.isdir(ap('meta/descriptions')):
-        os.makedirs(ap('meta/descriptions'))
+def create_comp_description(data):
     #confirms that the files were rendered
     datav = exists(data, 'render')
-    path = ap('meta/descriptions/' + name + '.txt')
+    comp_desc = list()
 
-    with open(path, 'w+') as f:
-        for i, row in datav.iterrows():
-            desc = enc_str(row['description'])[:50]
-            user = enc_str(row['username'])
-            line = ('{0}: {1} - {2} -- {3}\n'
-                    .format(i + 1, user, desc, row['permalinkUrl']))
-            f.write(enc_str(line))
-    return path
+    for i, row in datav.iterrows():
+        desc = enc_str(row['description'])[:50]
+        user = enc_str(row['username'])
+        line = ('{0}: {1} - {2} -- {3}'
+                .format(i + 1, user, desc, row['permalinkUrl']))
+        comp_desc.append(line)
+    return r'\n'.join(comp_desc)
+
+
+def upload_video(path, desc_path, name):
+    if osp.isfile(path):
+        args = (['python2', ap('youtube_upload.py'),
+                 '--api-upload',
+                '--email=vinecompauthority@gmail.com',
+                '--password=yvngqhuxhjynsyfq',
+                '--title="Hottest ' + name.title() + ' Vines of The Week"',
+                '--category=Comedy',
+                '--description=' + desc,
+                path])
+        subprocess.call(args)
+    else:
+        print('File not found: ' + path)
 
 
 if __name__ == '__main__':
@@ -164,9 +175,9 @@ if __name__ == '__main__':
     data = load_top_n(n, name)
     render_vines(data, name)
     path = concat_vines(data, name)
-    desc_path = write_description(data, name)
+    desc = create_comp_description(data)
     try:
-        upload_video(path, desc_path)
+        upload_video(path, desc, name)
         flush_render()
     except Exception as e:
         print('Error with upload script, not flushing render folder')
