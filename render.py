@@ -80,7 +80,7 @@ def render_vines(data, channel):
                      size=channel_icon_size,
                      font='Heroic-Condensed-Bold', fontsize=125,
                      align='center', color='red')
-                     .set_position((140, 120))
+                     .set_position((140, 20))
                      .set_duration(vine.duration))
             #grabs a random second from our static video sourced from
             #http://www.videezy.com/elements-and-effects/242-tv-static-hd-stock-video
