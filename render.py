@@ -53,6 +53,8 @@ def render_vines(data, channel):
                                                            pos='center')
             #encodes text as ascii for textclip creation
             user = enc_str(row['username']).upper()
+            user = re.sub('[_]+', ' ', user)
+            user = re.sub('[()]+', '', user)
             desc = enc_str(row['description']).upper()
             desc = re.sub(' #[a-zA-Z0-9]+', '', desc)       
             user = 'VINE BY:\n' + user
@@ -124,21 +126,21 @@ def concat_vines(data, name):
     subprocess.call(args)
     return final_path
 
+
 def create_comp_description(data):
     #confirms that the files were rendered
     datav = exists(data, 'render')
     comp_desc = list()
 
     for i, row in datav.iterrows():
-        desc = enc_str(row['description'])[:70]
         user = enc_str(row['username'])
-        line = ('{0}: {1} - {2} -- {3}'
-                .format(i + 1, user, desc, row['permalinkUrl']))
+        line = ('{0}: {1} -- {3}'
+                .format(i + 1, user, row['permalinkUrl']))
         comp_desc.append(line)
-    return r'\n'.join(comp_desc)
+    return '\n'.join(comp_desc)[:4990]
 
 
-def upload_video(path, desc_path, name):
+def upload_video(path, desc, name):
     if osp.isfile(path):
         args = (['python2', ap('youtube_upload.py'),
                  '--api-upload',
