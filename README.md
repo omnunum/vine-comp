@@ -1,5 +1,5 @@
 #Vine Compilation Bot#
-This is a script written in Python for scraping [Vine][1] data from the official [Vine API][2].  This project is comprised of two main scripts, the scraper and the renderer.
+This is a script written in Python (2.7) for scraping [Vine][1] data from the official [Vine API][2].  This project is comprised of two main scripts, the scraper and the renderer.  This currently does not work with Python 3.
 
 The scraper uses [Pandas][3] (my favorite data analysis library) to process and sort the Vine response data, which also depends on [Numpy][6] to function.  Other dependencies are [requests][4] and [lxml][5] for scraping popular tags from the vine homepage.
 
