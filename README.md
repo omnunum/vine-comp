@@ -37,10 +37,10 @@ Render top n vines of the specified channel/playlist
 Individual vine renders can be found in render/ and final renders can be found in render/finals/ with the filename as the channel or playlist name
 
 ###To-Do###
-  *Add rolling date check to only retain vines posted within the specified amount of time
-  *Finish implimenting the trending tags scraping
-  *Allow for tag/user cadence within playlist videos, such that the playback of vines follow a certain order. e.g. (twerk, twerk, wshh, vinefight, twerk, 934940633704047000)
-  *Archive metadata after renderning finishes
+* Add rolling date check to only retain vines posted within the specified amount of time
+* Finish implementing the trending tags scraping
+* Allow for tag/user cadence within playlist videos, such that the playback of vines follow a certain order. e.g. (twerk, twerk, wshh, vinefight, twerk, 934940633704047000)
+* Archive metadata after rendering finishes
 
 [1]: http://vine.co/
 [2]: https://github.com/VineAPI/VineAPI/blob/master/endpoints.md
