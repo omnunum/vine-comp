@@ -9,42 +9,60 @@ import os.path as osp
 import sys
 import pandas as pd
 import re
-import subprocess
 from unicodedata import normalize
 
 
-#populates a threadpool in the given queue with the passed class
 def thread_pool(q, maxthreads, ThreadClass):
+    '''
+        Populates a threadpool in the given queue with the passed class.
+
+        q
+            Queue instance to populate with threads
+        maxthreads
+            Maximum number of threads that will be allowed in the queue
+        ThreadClass
+            Class that extends Thread class to be run
+    '''
     for x in range(maxthreads):
         t = ThreadClass(q)
         t.setDaemon(True)
         t.start()
 
 
-#converts utf-8 strings to ascii by dropping invalid characters
-def enc_str(x):
-    if isinstance(x, unicode):
-        return normalize('NFKD', x).encode('ascii', 'ignore')
+def enc_str(utf):
+    '''
+        Converts utf-8 strings to ascii by dropping invalid characters.
+    '''
+    if isinstance(utf, unicode):
+        return normalize('NFKD', utf).encode('ascii', 'ignore')
     else:
-        return str(x)
+        return str(utf)
 
 
-#sorts the rows by the loop count, drop duplicates, and resets the index
 def sort_clean(data):
+    '''
+        Sorts the rows by the loop count, drop duplicates, and resets the index.
+    '''
     data_sorted = data.sort(columns=['count'], ascending=False)
     data_cleaned = data_sorted.drop_duplicates(subset='permalinkUrl')
     data_reindex = data_cleaned.reset_index(drop=True)
     return data_reindex
 
 
-#gets the absolute path of the directory and append the path to it
+
 def ap(path):
+    """
+        Gets the absolute path of the directory and appends the path to it.
+    """
     return osp.join(osp.dirname(osp.abspath(sys.argv[0])), path)
 
 
-#checks all the id's of the vines to see if there is a corresponding file
-#in the specified directory, if wrong directory method returns empty DataFrame
 def exists(data, directory):
+    """
+        Checks all the id's of the vines to see if there is a corresponding file
+        in the specified directory, and if wrong directory, method returns 
+        empty DataFrame.
+    """
     if directory in ['cache', 'render']:
         #filter lambda for the dataframe
         is_file = lambda vineid: osp.isfile(ap(directory + '/' + str(vineid) + '.mp4'))
@@ -73,15 +91,19 @@ def load_top_n(n, name):
             print(e)
 
 
-#gets rid of all files in the render and cache directories as well as
-#the vine records csv and leftover temp mp3 audio clips
 def flush_all():
+    """
+       Gets rid of all files in the render and cache directories as well as
+       the vine records csv and leftover temp mp3 audio clips.
+    """
     directories = ['render/', 'cache/', 'meta/']
+
     for directory in directories:
         print('removing all files in: ' + directory)
         for vfile in os.listdir(ap(directory)):
             if not re.match('playlists.csv', vfile):
                 delete_file(directory + vfile)
+
     for vfile in os.listdir(ap('')):
         if vfile.endswith('.mp3'):
             print('removing: ' + vfile)
@@ -89,6 +111,9 @@ def flush_all():
 
 
 def flush_render():
+    """
+       Gets rid of all files in the render directory
+    """
     for directory in ['render/', 'render/finals/']:
         print('removing all files in: ' + directory)
         for vfile in os.listdir(ap(directory)):

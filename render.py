@@ -13,7 +13,6 @@ import sys
 import getopt
 import numpy as np
 import re
-import pandas as pd
 import random
 
 
@@ -36,7 +35,19 @@ def write_x264(vfc, path):
                         threads=4, verbose=True, fps=30)
 
 
-def render_vines(data, channel):
+def render_vines(data, channel=None):
+    '''
+        Individually renders all of the vines specified in data with the
+        username, description, order, and optionally channel icon.
+        Vines that have already been rendered and exist in render/ get skipped.
+        Vines are intercut with a random second of a longer static source
+        video, as well as a second of a static WAV file.
+
+        data
+            Pandas DataFrame: contains the vine metadata
+        channel
+            channel name used to identify icon
+    '''
     #verify files exist in cache folder
     datav = exists(data, 'cache')
     #files already rendered get skipped
@@ -52,6 +63,7 @@ def render_vines(data, channel):
                                                            color=(20, 20, 25),
                                                            pos='center')
                                                   .resize((1280, 720)))
+
             #encodes text as ascii for textclip creation
             user = enc_str(row['username']).upper()
             user = re.sub('[_]+', ' ', user)
@@ -69,24 +81,31 @@ def render_vines(data, channel):
             user_osd = tc(user, 85, 11).set_position((0, 25))
             desc_osd = tc(desc, 60, 0).set_position('right')
 
+            #gets icon if it exists
             channel_icon_path = ap('meta/icons/' + channel + '.png')
             channel_icon_size = (144, 144)
-            channel_icon = mpe.ImageClip(str(channel_icon_path), transparent=True)
+            channel_icon = mpe.ImageClip(transparent=True)
+
+            if osp.isfile(channel_icon_path):
+                channel_icon = mpe.ImageClip(str(channel_icon_path), transparent=True)
             channel_icon = (channel_icon.set_duration(vine.duration)
                                         .resize(channel_icon_size)
                                         .set_position((0, 5)))
-            #order number
+
+            #vine order number within video
             order = (mpe.TextClip(txt=str(row['order'] + 1), 
                      size=channel_icon_size,
                      font='Heroic-Condensed-Bold', fontsize=125,
                      align='center', color='red')
                      .set_position((140, 20))
                      .set_duration(vine.duration))
+
             #grabs a random second from our static video sourced from
             #http://www.videezy.com/elements-and-effects/242-tv-static-hd-stock-video
             static_v = vfc_from_file('static', '').resize(vine.size)
             randsec = random.randint(0, int(static_v.duration) - 2)
             static_v = static_v.subclip(randsec, randsec + 1)
+            
             #grab the audio for the static and set it to the video
             static_a = mpe.AudioFileClip(ap('static.wav')).volumex(0.3)
             static = static_v.set_audio(static_a)
@@ -96,7 +115,7 @@ def render_vines(data, channel):
             comp = mpe.CompositeVideoClip([vine, user_osd, desc_osd,
                                            channel_icon, order])
             comp = mpe.concatenate_videoclips([comp, static])
-                                           
+
             #start the render
             path = ap('render/' + vineid + '.mp4')
             write_x264(comp, path)
@@ -106,11 +125,20 @@ def render_vines(data, channel):
 
 
 def concat_vines(data, name):
+    '''
+        Concatenates rendered vines losslessly by using ffmpeg directly to
+        add the streams together.  Does not reencode files.
+
+        data
+            Pandas DataFrame: contains the vine metadata
+        name
+            channel name used for final render filepath
+    '''
     #gets all the vine ids, returns those are have been rendered with titles
     datavid = exists(data, 'render')['id']
-    #sets up the paths we'll need
     vine_list_path = ap('render/' + name + '.txt')
     final_path = ap('render/finals/' + name + '.mp4')
+
     #makes the necessary folders if doesn't exist
     if not osp.isdir(ap('render/finals')):
         os.makedirs(ap('render/finals'))
@@ -118,18 +146,24 @@ def concat_vines(data, name):
         #if an old copy already exists let's delete it
         if osp.isfile(final_path):
             os.unlink(final_path)
-    
+
     with open(vine_list_path, 'w+') as l:
         for vineid in datavid:
             path = ap('render/' + vineid + '.mp4')
             l.write('file \'' + path + '\'\n')
+
     args = (['ffmpeg', '-f', 'concat', '-i', vine_list_path,
              '-c', 'copy', final_path])
     subprocess.call(args)
+
     return final_path
 
 
 def create_comp_description(data):
+    '''
+        Creates video description using the username, title, and order of
+        the vines
+    '''
     #confirms that the files were rendered
     datav = exists(data, 'render')
     comp_desc = list()
@@ -139,6 +173,7 @@ def create_comp_description(data):
         line = ('{0}: {1} -- {2}'
                 .format(i + 1, user, row['permalinkUrl']))
         comp_desc.append(line)
+
     return '\n'.join(comp_desc)[:4990]
 
 
@@ -161,6 +196,7 @@ if __name__ == '__main__':
     options, remainder = getopt.gnu_getopt(sys.argv[1:], ':',
                                            ['name=', 'limit='])
     name, n = 'comedy', 10
+
     for opt, arg in options:
         if opt == '--name':
             name = arg
@@ -171,6 +207,7 @@ if __name__ == '__main__':
     render_vines(data, name)
     path = concat_vines(data, name)
     desc = create_comp_description(data)
+
     try:
         if osp.isfile(path):
             upload_video(path, desc, name)
