@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Thu Dec 11 14:36:33 2014
+
 @author: sunshine
 """
 
@@ -83,13 +84,13 @@ def render_vines(data, channel=None):
             #gets icon if it exists
             channel_icon_path = ap('meta/icons/' + channel + '.png')
             channel_icon_size = (144, 144)
-            channel_icon = mpe.ImageClip(transparent=True)
+            channel_icon = ''
 
             if osp.isfile(channel_icon_path):
                 channel_icon = mpe.ImageClip(str(channel_icon_path), transparent=True)
-            channel_icon = (channel_icon.set_duration(vine.duration)
-                                        .resize(channel_icon_size)
-                                        .set_position((0, 5)))
+                channel_icon = (channel_icon.set_duration(vine.duration)
+                                            .resize(channel_icon_size)
+                                            .set_position((0, 5)))
 
             #vine order number within video
             order = (mpe.TextClip(txt=str(row['order'] + 1), 
@@ -108,11 +109,12 @@ def render_vines(data, channel=None):
             #grab the audio for the static and set it to the video
             static_a = mpe.AudioFileClip(ap('static.wav')).volumex(0.3)
             static = static_v.set_audio(static_a)
-            
+            parts = [vine, user_osd, desc_osd, order]
+            if channel_icon:
+                parts.append(channel_icon)
             #composite the parts on the sides of the video
             #then concatenate with the static intercut
-            comp = mpe.CompositeVideoClip([vine, user_osd, desc_osd,
-                                           channel_icon, order])
+            comp = mpe.CompositeVideoClip(parts)
             comp = mpe.concatenate_videoclips([comp, static])
 
             #start the render
