@@ -15,7 +15,70 @@ import requests as rq
 from shared import *
 from threading import Thread
 from Queue import Queue
-from datetime import datetime as dt
+import datetime as dt
+
+
+class ThreadScrape(Thread):
+
+    def __init__(self, queue):
+        self.q = queue
+        Thread.__init__(self)
+
+    def run(self):
+        while True:
+            args = self.q.get()
+            endpoint, term, feed, name, dir_path, pagelim = args
+            
+            if not feed == '':
+                feed = '/' + feed
+            data = scrape(pagelim, 'timelines/' + endpoint, term=term + feed)
+
+            if not data.empty:
+                cutoff_date = (dt.datetime.now() - dt.timedelta(days=7)).isoformat()
+                data = data[cutoff_date < data.created]
+                try:
+                    update_records(data, dir_path + '/' + name + '.csv')
+                except Exception as e:
+                    print(e)
+            else:
+                print(term + ' came up empty')
+
+            print(endpoint + ' ' + term + ' task completed')
+            self.q.task_done()
+
+
+class ThreadDLVines(Thread):
+    """
+        Threaded class to download vine video files using the requests library
+        to chunk and save the data from the buffer.
+    """
+    def __init__(self, queue):
+        self.q = queue
+        Thread.__init__(self)
+
+    def run(self):
+        while True:
+            #grab some data from the queue
+            data, dir_path = self.q.get()
+            url = data['videoUrl']
+            vineid = str(data['id'])
+            desc = data['description']
+
+            if isinstance(desc, basestring) and not pd.isnull(desc):
+                desc = enc_str(desc)
+            else:
+                desc = ''
+
+            filename = dir_path + 'cache/' + vineid + '.mp4'
+
+            # Download the file if it does not exist
+            if not osp.isfile(filename):
+                print('downloading ' + vineid + ': ' + desc)
+                with open(filename, 'wb') as fd:
+                    for chunk in rq.get(url, stream=True).iter_content(5000):
+                        fd.write(chunk)
+
+            self.q.task_done()
 
 
 def scrape(pagelim, endpoint, term=''):
@@ -41,7 +104,7 @@ def scrape(pagelim, endpoint, term=''):
     vines = ''
 
     while success:
-        if page > 0:
+        if page:
             url = url.split('?')[0] + '?page=' + str(page)
         else:
             print('Attempting to scrape: ' + url)
@@ -76,7 +139,7 @@ def scrape(pagelim, endpoint, term=''):
             print('API request failed, {0}/{1} not valid'.format(endpoint, term))
             success = False
 
-    if page > 0:
+    if page:
         #expands the loops column's objects into count and velocity columns
         loops = comp['loops'].apply(lambda x: pd.Series(x))
         unstacked = loops.unstack().unstack().T[['count', 'velocity']]
@@ -107,61 +170,26 @@ def download_vines(data):
     """
     q = Queue()
     thread_pool(q, 5, ThreadDLVines)
-    
+
     #we need to pass in the root path so the thread doesn't get confused
     dir_path = ap('')
 
     for i, row in data.iterrows():
         q.put((row, dir_path))
-    
+
     q.join()
 
 
-class ThreadDLVines(Thread):
-    """
-        Threaded class to download vine video files using the requests library
-        to chunk and save the data from the buffer.
-    """
-    def __init__(self, queue):
-        self.q = queue
-        Thread.__init__(self)
-
-    def run(self):
-        while True:
-            #grab some data from the queue
-            data, dir_path = self.q.get()
-            url = data['videoUrl']
-            vineid = str(data['id'])
-            desc = data['description']
-
-            if isinstance(desc, basestring) and not pd.isnull(desc):
-                desc = enc_str(desc)
-            else:
-                desc = ''
-  
-            filename = dir_path + 'cache/' + vineid + '.mp4'
-
-            # Download the file if it does not exist
-            if not osp.isfile(filename):
-                print('downloading ' + vineid + ': ' + desc)
-                with open(filename, 'wb') as fd:
-                    for chunk in rq.get(url, stream=True).iter_content(5000):
-                        fd.write(chunk)
-
-            self.q.task_done()
-
-
-def update_records(data, name):
+def update_records(data, filepath):
     """
         Adds new passed data to the existing file
-        
+
         data
             Pandas DataFrame: contains the vine metadata
-        name
-            name used for finding path
+        filepath
+            filepath for csv record
     """
-    filepath = ap('cache/' + name + '.csv')
-    
+
     #if the file exsts, combine file with new data
     if osp.isfile(filepath):
         records = pd.read_csv(filepath, encoding='utf-8')
@@ -194,31 +222,11 @@ def get_trending_tags():
     return tags
 
 
-class ThreadScrape(Thread):
-
-    def __init__(self, queue):
-        self.q = queue
-        Thread.__init__(self)
-
-    def run(self):
-        while True:
-            args = self.q.get()
-            endpoint, term, feed, name, dir_path, pagelim = args
-            if not feed == '':
-                feed = '/' + feed
-            cdf = scrape(pagelim, 'timelines/' + endpoint, term=term + feed)
-            if not cdf.empty:
-                try:
-                    update_records(cdf, dir_path + '/' + name + '.csv')
-                except Exception as e:
-                    print(e)
-            else:
-                print(term + ' came up empty')
-            print(endpoint + ' ' + term + ' task completed')
-            self.q.task_done()
-
-
 def scrape_all(pagelim):
+    '''
+        Scrapes all available sources of information, including playlists,
+        channels, and trending tags.
+    '''
     channels = {'comedy': 1, 'art': 2, 'places': 5, 'family': 7,
                 'food': 10, 'music': 11, 'fashion': 12, 'news': 14,
                 'scary': 16, 'animals': 17}
@@ -254,14 +262,14 @@ def scrape_all(pagelim):
 
 
 if __name__ == "__main__":
-    options, remainder = getopt.gnu_getopt(sys.argv[1:], ':u',
+    options, remainder = getopt.gnu_getopt(sys.argv[1:], ':ua',
                                            ['download=', 'flush=',
-                                            'update='])
+                                            'update=', 'archive'])
     for opt, arg in options:
         if opt == '--flush':
             if arg == 'render':
                 flush_render()
-            else:    
+            else:
                 flush_all()
         elif opt == '--download':
             data = load_top_n(90, arg)
@@ -276,3 +284,5 @@ if __name__ == "__main__":
                 print('I need a number to set the max page limit')
         elif opt == '-u':
             scrape_all(-1)
+        elif opt in ['--archive', '-a']:
+            archive_metadata()

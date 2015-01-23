@@ -9,7 +9,16 @@ import os.path as osp
 import sys
 import pandas as pd
 import re
+import datetime as dt
 from unicodedata import normalize
+
+
+def from_utc(utcTime,fmt="%Y-%m-%dT%H:%M:%S.%fZ"):
+    """
+    Convert UTC time string to time.struct_time
+    """
+    # change datetime.datetime to time, return time.struct_time type
+    return dt.datetime.strptime(utcTime, fmt)
 
 
 def thread_pool(q, maxthreads, ThreadClass):
@@ -89,6 +98,20 @@ def load_top_n(n, name):
             return sort_clean(df).ix[:n - 1, :]
         except Exception as e:
             print(e)
+
+
+def archive_metadata():
+    time = dt.datetime.now().strftime('%d-%m-%Y')
+    if not osp.isdir(ap('meta/archives')):
+        os.mkdir(ap('meta/archives'))
+    if not osp.isdir(ap('meta/archives/' + time)):
+        os.mkdir(ap('meta/archives/' + time))
+    for filename in os.listdir(ap('meta/')):
+        if osp.isfile(ap('meta/' + filename)):
+            if not re.match('playlists.csv', filename):
+                os.rename(ap('meta/' + filename), 
+                          ap('meta/archives/' + time + '/' + filename))
+            
 
 
 def flush_all():
