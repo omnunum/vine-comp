@@ -17,6 +17,19 @@ from threading import Thread
 from Queue import Queue
 import datetime as dt
 
+class ThreadWrite(Thread):
+    def __init__(self, queue):
+        self.q = queue
+        Thread.__init__(self)
+    
+    def run(self):
+        while True:
+            data, file_path = self.q.get()
+            try:
+                update_records(data, file_path)
+            except Exception as e:
+                print(e)
+            self.q.task_done()
 
 class ThreadScrape(Thread):
 
@@ -27,7 +40,7 @@ class ThreadScrape(Thread):
     def run(self):
         while True:
             args = self.q.get()
-            endpoint, term, feed, name, dir_path, pagelim = args
+            endpoint, term, feed, name, dir_path, pagelim, sq = args
             
             if not feed == '':
                 feed = '/' + feed
@@ -36,10 +49,7 @@ class ThreadScrape(Thread):
             if not data.empty:
                 cutoff_date = (dt.datetime.now() - dt.timedelta(days=7)).isoformat()
                 data = data[cutoff_date < data.created]
-                try:
-                    update_records(data, dir_path + '/' + name + '.csv')
-                except Exception as e:
-                    print(e)
+                sq.put((data, dir_path + '/' + name + '.csv'))
             else:
                 print(term + ' came up empty')
 
@@ -148,7 +158,6 @@ def scrape(pagelim, endpoint, term=''):
         subset = comp[['videoUrl', 'permalinkUrl', 'username', 'created']].astype(basestring).copy()
 
         #adds the new columns to the previous page(s) composite
-        subset['created'] = comp['created']
         subset['count'] = unstacked['count'].astype(int)
         subset['velocity'] = unstacked['velocity'].astype(float)
         subset['description'] = comp['description'].astype(basestring).map(enc_str)
@@ -234,12 +243,12 @@ def scrape_all(pagelim):
                 'food': 10, 'music': 11, 'fashion': 12, 'news': 14,
                 'scary': 16, 'animals': 17}
 
-    q = Queue()
+    q, sq = Queue(), Queue()
     thread_pool(q, 10, ThreadScrape)
-
+    thread_pool(sq, 1, ThreadWrite)
     for channel, cid in channels.iteritems():
         #queue data: endpoint, term, feed, name, dir_path
-        q.put(('channels', str(cid), 'popular', channel, ap('meta'), pagelim))
+        q.put(('channels', str(cid), 'popular', channel, ap('meta'), pagelim, sq))
 
     playlists = []
 
@@ -255,11 +264,11 @@ def scrape_all(pagelim):
 
         for tag in tags:
             if not pd.isnull(tag) and tag not in ['nan', '']:
-                q.put(('tags', tag, '', row['name'], ap('meta'), pagelim))
+                q.put(('tags', tag, '', row['name'], ap('meta'), pagelim, sq))
 
         for user in users:
             if not pd.isnull(user) and user not in ['nan', '']:
-                q.put(('users', user, '', row['name'], ap('meta'), pagelim))
+                q.put(('users', user, '', row['name'], ap('meta'), pagelim, sq))
 
     q.join()
 
