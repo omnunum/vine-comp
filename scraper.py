@@ -168,16 +168,19 @@ def download_vines(data):
         Creates a queue for downloading the vine video files, populates it with
         the passed DataFrame row data.
     """
-    q = Queue()
-    thread_pool(q, 5, ThreadDLVines)
-
-    #we need to pass in the root path so the thread doesn't get confused
-    dir_path = ap('')
-
-    for i, row in data.iterrows():
-        q.put((row, dir_path))
-
-    q.join()
+    if not data.empty:
+        q = Queue()
+        thread_pool(q, 5, ThreadDLVines)
+    
+        #we need to pass in the root path so the thread doesn't get confused
+        dir_path = ap('')
+    
+        for i, row in data.iterrows():
+            q.put((row, dir_path))
+    
+        q.join()
+    else:
+        print('data for vine downloading not found')
 
 
 def update_records(data, filepath):
@@ -269,12 +272,13 @@ if __name__ == "__main__":
         if opt == '--flush':
             if arg == 'render':
                 flush_render()
-            else:
+            elif arg == 'all':
                 flush_all()
         elif opt == '--download':
             data = load_top_n(90, arg)
-            download_vines(data)
-            update_records(data, arg)
+            if not data.empty:
+                download_vines(data)
+                update_records(data, arg)
         elif opt == '--update':
             try:
                 int(arg)
