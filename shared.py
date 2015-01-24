@@ -92,20 +92,23 @@ def delete_file(path):
 
 def load_top_n(n, name):
     path = ap('meta/' + name + '.csv')
+    print(path)
     if osp.isfile(path):
         try:
             df = pd.read_csv(path, encoding='utf-8')
             return sort_clean(df).ix[:n - 1, :]
-        except Exception as e:
+        except Exception as e:  
             print(e)
 
 
 def archive_metadata():
     time = dt.datetime.now().strftime('%d-%m-%Y')
+
     if not osp.isdir(ap('meta/archives')):
         os.mkdir(ap('meta/archives'))
     if not osp.isdir(ap('meta/archives/' + time)):
         os.mkdir(ap('meta/archives/' + time))
+
     for filename in os.listdir(ap('meta/')):
         if osp.isfile(ap('meta/' + filename)):
             if not re.match('playlists.csv', filename):

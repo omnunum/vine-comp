@@ -168,7 +168,7 @@ def download_vines(data):
         Creates a queue for downloading the vine video files, populates it with
         the passed DataFrame row data.
     """
-    if not data.empty:
+    if isinstance(data, pd.DataFrame):
         q = Queue()
         thread_pool(q, 5, ThreadDLVines)
     
@@ -276,9 +276,11 @@ if __name__ == "__main__":
                 flush_all()
         elif opt == '--download':
             data = load_top_n(90, arg)
-            if not data.empty:
+            if isinstance(data, pd.DataFrame):
                 download_vines(data)
                 update_records(data, arg)
+            else:
+                print('could not get vine data for downloading, maybe wrong name?')
         elif opt == '--update':
             try:
                 int(arg)
