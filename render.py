@@ -14,6 +14,7 @@ import getopt
 import numpy as np
 import re
 import random
+import subprocess
 
 
 def vfc_from_file(filename, directory):
