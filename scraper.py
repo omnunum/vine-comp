@@ -301,11 +301,12 @@ if __name__ == "__main__":
                 flush_all()
 
         elif opt == '--download':
-            if ':' in arg:
-                name, pagelim = arg.split(':')[0], arg.split(':')[1]
+            if re.search(':', arg):
+                name, pagelim = arg.split(':')[0], int(arg.split(':')[1])
                 data = load_top_n(pagelim, name)
             else:
                 data = load_top_n(99, arg)
+            print(type(data))
             if isinstance(data, pd.DataFrame):
                 download_vines(data)
                 update_records(data, arg)
