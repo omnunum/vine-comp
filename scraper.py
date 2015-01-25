@@ -5,17 +5,18 @@ Created on Wed Dec 10 22:18:28 2014
 @author: sunshine
 """
 
+import sys
+import getopt
 import pandas as pd
 import numpy as np
 import os.path as osp
-import sys
-import getopt
-from lxml import html
 import requests as rq
-from shared import *
+import datetime as dt
+from lxml import html
 from threading import Thread
 from Queue import Queue
-import datetime as dt
+from shared import *
+
 
 class ThreadWrite(Thread):
     def __init__(self, queue):
@@ -30,6 +31,7 @@ class ThreadWrite(Thread):
             except Exception as e:
                 print(e)
             self.q.task_done()
+
 
 class ThreadScrape(Thread):
 
@@ -162,10 +164,20 @@ def scrape(pagelim, endpoint, term=''):
         subset['velocity'] = unstacked['velocity'].astype(float)
         subset['description'] = comp['description'].astype(basestring).map(enc_str)
 
+        #when I get the results for a tag search, it always seems to include
+        #results that don't have the tag in the description, this filters those
+        #results out of the data 
+        tag = re.search(r'(?<=tags/)(\w+)(?=\?*?)', url)
+        if tag:
+            tag_text = tag.group()
+            print('checking for: ' + tag_text)
+            #filters results based on the truth result of a regex
+            subset = subset[subset.description.fillna(value=' ').str.contains(tag_text)]
+
         #extracts the vineid from the right side of the permalink
         get_id = lambda x: x.rsplit('/', 1)[-1]
         subset['id'] = [get_id(perma) for perma in subset['permalinkUrl']]
-        sort = sort_clean(subset)
+        sort = sort_clean(subset).dropna()
 
         return sort
     else:
@@ -204,8 +216,8 @@ def update_records(data, filepath):
 
     #if the file exsts, combine file with new data
     if osp.isfile(filepath):
-        records = pd.read_csv(filepath, encoding='utf-8')
-        comp = sort_clean(pd.concat([data, records], ignore_index=True))
+        records = pd.read_csv(filepath, encoding='utf-8', error_bad_lines=False)
+        comp = pd.concat([data, records], ignore_index=True)
         comp.to_csv(filepath, index=False, encoding='utf-8')
     else:
         #save it for the first time
@@ -246,8 +258,12 @@ def scrape_all(pagelim):
     q, sq = Queue(), Queue()
     thread_pool(q, 10, ThreadScrape)
     thread_pool(sq, 1, ThreadWrite)
+
+    #gets the main popular and recent feeds
+    q.put((str(), str(), 'popular', 'popular', ap('meta'), pagelim, sq))
+
     for channel, cid in channels.iteritems():
-        #queue data: endpoint, term, feed, name, dir_path
+        #queue data: endpoint, term, feed, name, dir_path, pagelim, sq
         q.put(('channels', str(cid), 'popular', channel, ap('meta'), pagelim, sq))
 
     playlists = []
@@ -283,13 +299,19 @@ if __name__ == "__main__":
                 flush_render()
             elif arg == 'all':
                 flush_all()
+
         elif opt == '--download':
-            data = load_top_n(90, arg)
+            if ':' in arg:
+                name, pagelim = arg.split(':')[0], arg.split(':')[1]
+                data = load_top_n(pagelim, name)
+            else:
+                data = load_top_n(99, arg)
             if isinstance(data, pd.DataFrame):
                 download_vines(data)
                 update_records(data, arg)
             else:
                 print('could not get vine data for downloading, maybe wrong name?')
+
         elif opt == '--update':
             try:
                 int(arg)
@@ -297,6 +319,7 @@ if __name__ == "__main__":
             except ValueError as e:
                 print(e)
                 print('I need a number to set the max page limit')
+
         elif opt == '-u':
             scrape_all(-1)
         elif opt in ['--archive', '-a']:

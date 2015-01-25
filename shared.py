@@ -95,7 +95,7 @@ def load_top_n(n, name):
     print(path)
     if osp.isfile(path):
         try:
-            df = pd.read_csv(path, encoding='utf-8')
+            df = pd.read_csv(path, encoding='utf-8', error_bad_lines=False)
             return sort_clean(df).ix[:n - 1, :]
         except Exception as e:  
             print(e)
