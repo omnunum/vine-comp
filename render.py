@@ -171,8 +171,8 @@ def create_comp_description(data):
     comp_desc = list()
 
     for i, row in datav.iterrows():
-        user = enc_str(row['username'])
-        line = ('{0}: {1} -- {2}'
+        user = row['username']
+        line = enc_string('{0}: {1} -- {2}'
                 .format(i + 1, user, row['permalinkUrl']))
         comp_desc.append(line)
 
