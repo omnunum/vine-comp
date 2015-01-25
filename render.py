@@ -70,7 +70,8 @@ def render_vines(data, channel=None):
             user = re.sub('[_]+', ' ', user)
             user = re.sub('[()]+', '', user)
             desc = enc_str(row['description']).upper()
-            desc = re.sub(' #[a-zA-Z0-9]+', '', desc)       
+            desc = re.sub(' #[a-zA-Z0-9]+', '', desc)
+            desc = re.sub('\W{2,}', ' ', desc)
             user = 'VINE BY:\n' + user
 
             #lambda to create text clip
@@ -93,10 +94,16 @@ def render_vines(data, channel=None):
                                             .resize(channel_icon_size)
                                             .set_position((0, 5)))
 
-            #vine order number within video
+            #vine order number within video, autoscaling text size when the
+            #order hits 3 digits. the order is zero-based, and we need to make
+            #it one-based, which is why we increment the rendered order
+            #and why the check is for greaters than 98
+            order_text_size = 125
+            if row['order'] > 98:
+                order_text_size = 100
             order = (mpe.TextClip(txt=str(row['order'] + 1), 
                      size=channel_icon_size,
-                     font='Heroic-Condensed-Bold', fontsize=125,
+                     font='Heroic-Condensed-Bold', fontsize=order_text_size,
                      align='center', color='red')
                      .set_position((140, 20))
                      .set_duration(vine.duration))
@@ -113,6 +120,7 @@ def render_vines(data, channel=None):
             parts = [vine, user_osd, desc_osd, order]
             if channel_icon:
                 parts.append(channel_icon)
+
             #composite the parts on the sides of the video
             #then concatenate with the static intercut
             comp = mpe.CompositeVideoClip(parts)
