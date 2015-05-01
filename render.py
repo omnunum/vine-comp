@@ -125,6 +125,9 @@ def render_vines(data, channel=None):
             #then concatenate with the static intercut
             comp = mpe.CompositeVideoClip(parts)
             comp = mpe.concatenate_videoclips([comp, static])
+            
+            if not osp.isdir(ap('render/')):
+                os.mkdir(ap('render/'))
 
             #start the render
             path = ap('render/' + vineid + '.mp4')
@@ -180,7 +183,7 @@ def create_comp_description(data):
 
     for i, row in datav.iterrows():
         user = row['username']
-        line = enc_string('{0}: {1} -- {2}'
+        line = enc_str('{0}: {1} -- {2}'
                 .format(i + 1, user, row['permalinkUrl']))
         comp_desc.append(line)
 

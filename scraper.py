@@ -82,8 +82,10 @@ class ThreadDLVines(Thread):
                 desc = ''
             cache_dir_path = dir_path + 'cache/'
             filename = cache_dir_path + vineid + '.mp4'
+
             if not osp.isdir(cache_dir_path):
                 os.mkdir(cache_dir_path)
+                
             # Download the file if it does not exist
             if not osp.isfile(filename):
                 print('downloading ' + vineid + ': ' + desc)
